@@ -1,40 +1,51 @@
-import pyvisa as visa
+import pyvisa
 import matplotlib.pyplot as plt
+import skrf as rf
+import numpy as np
 
-# Change this variable to the address of your instrument
-VISA_ADDRESS = 'TCPIP0::localhost::inst0::INSTR'
 
-# Create a connection (session) to the instrument
-resourceManager = visa.ResourceManager()
-session = resourceManager.open_resource(VISA_ADDRESS)
+def get_s21(start, stop, res, num_points):
+    freqs = np.linspace(start, stop, num_points)
+    VISA = "GPIB0::16::INSTR"
+    rm = pyvisa.ResourceManager()
+    vna = rm.open_resource('GPIB0::16::INSTR')
+    vna.read_termination = '\n'
+    vna.write_termination = '\n'
+    if vna.query('*IDN?'):
+        print("Connected to VNA:", vna.query('*IDN?'))
+    else:
+        return print("Failed to connect to VNA")
 
-# Command to preset the instrument and deletes the default trace, measurement, and window
-session.write("SYST:FPR")
+    # Configure VNA parameters (example)
+    vna.write(f'CALC1:PAR:S21:DEF')  # Define S21 measurement
+    vna.write(f'SENS1:FREQ:START {start}GHz')
+    vna.write(f'SENS1:FREQ:STOP {stop}GHz')
+    vna.write(f'SENS1:BAND:RES {res}kHz')
+    vna.write(f'SENS1:SWE:POIN {num_points}')  # Set the number of sweep points
+    vna.write(f'SENS1:PAR:S21:FORM MLOG')
 
-# Create and turn on window 1
-session.write("DISP:WIND1:STAT ON")
+    # Trigger a single sweep
+    vna.write(f'INIT:IMM')
 
-# Create a S21 measurement
-session.write("CALC1:MEAS1:DEF 'S21'")
+    # Wait for the measurement to complete (you may need to adjust the wait time)
+    vna.query(f'*OPC?')
 
-# Displays measurement 1 in window 1 and assigns the next available trace number to the measurement
-session.write("DISP:MEAS1:FEED 1")
+    # Retrieve S21 data
+    # s21_data = np.abs(vna.query_ascii_values(f'CALC1:DATA? SDATA')[:num_points])
+    s21 = np.array(vna.query_ascii_values(f'CALC1:DATA? FDATA'))
 
-# Set the active measurement to measurement 1
-session.write("CALC1:PAR:MNUM 1")
+    # frequency_data = vna.query_ascii_values('CALC1:X?')  # Query the frequency values
 
-# Set sweep type to linear
-session.write("SENS1:SWE:TYPE LIN")
+    # frequency_data = vna.query_ascii_values('SENS1:FREQ:DATA?')
+    vna.close()
+    return freqs, s21
 
-# Perfoms a single sweep
-session.write("SENS1:SWE:MODE SING")
-opcCode = session.query("*OPC?")
 
-# Get stimulus and formatted response data
-results = session.query_ascii_values("CALC1:MEAS1:DATA:FDATA?")
-xValues = session.query_ascii_values("CALC1:MEAS1:X:VAL?")
-
-plt.plot(xValues, results)
-plt.ylabel("dB")
-plt.xlabel("Frequency")
-plt.show()
+def plot_s21(freqs, s21):
+    fig, ax = plt.subplots()
+    _ = ax.plot(freqs, s21)
+    ax.set_xlabel('F [GHz]')
+    ax.set_ylabel('|$S_{21}$| [dB]')
+    ax.set_title('S21 from VNA')
+    ax.grid(which='Major')
+    plt.show()
