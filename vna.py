@@ -1,9 +1,9 @@
-# import pyvisa
+import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def get_s21(start, stop, res, num_points):
+def get_s21(start, stop, num_points, timeout=3000):
     freqs = np.linspace(start, stop, num_points)
     VISA = "GPIB0::16::INSTR"
     try:
@@ -11,8 +11,10 @@ def get_s21(start, stop, res, num_points):
         try_visa = 1
     except:
         try_visa = 0
+        print('NOT connected to VNA')
     if try_visa:
         vna = rm.open_resource(VISA)
+        vna.timeout = timeout
         vna.read_termination = '\n'
         vna.write_termination = '\n'
         if vna.query('*IDN?'):
@@ -21,28 +23,37 @@ def get_s21(start, stop, res, num_points):
             vna.write(f'CALC1:PAR:S21:DEF')  # Define S21 measurement
             vna.write(f'SENS1:FREQ:START {start}GHz')
             vna.write(f'SENS1:FREQ:STOP {stop}GHz')
-            vna.write(f'SENS1:BAND:RES {res}kHz')
             vna.write(f'SENS1:SWE:POIN {num_points}')  # Set the number of sweep points
             vna.write(f'SENS1:PAR:S21:FORM MLOG')
+            # vna.write(f'SENS1:POW:ATT AREC,{att}')
 
             # Trigger a single sweep
             vna.write(f'INIT:IMM')
 
             # Wait for the measurement to complete (you may need to adjust the wait time)
-            vna.query(f'*OPC?')
+            
+           
+            try:
+                # vna.query(f'*OPC?')
+                # Perform your query with the adjusted timeout
+                response = vna.query_ascii_values(f'CALC1:DATA? FDATA')
+                s21 = np.array(response)
+                # If the query succeeds, you can process the response here
+                print("Query result positive")
+            except pyvisa.VisaIOError as e:
+                s21 = np.zeros(num_points)
+                # input(timeout)
+                # vna.timeout = timeout
+                if "Timeout" in str(e):
+                    print("Query timed out. Consider increasing the timeout.")
+                else:
+                    print("An error occurred:", e)
 
-            # Retrieve S21 data
-            # s21_data = np.abs(vna.query_ascii_values(f'CALC1:DATA? SDATA')[:num_points])
-            s21 = np.array(vna.query_ascii_values(f'CALC1:DATA? FDATA'))
-
-            # frequency_data = vna.query_ascii_values('CALC1:X?')  # Query the frequency values
-
-            # frequency_data = vna.query_ascii_values('SENS1:FREQ:DATA?')
             vna.close()
         else:
-            s21 = np.zeros(len(freqs))
+            s21 = np.zeros(num_points)
     else:
-        s21 = np.zeros(len(freqs))
+        s21 = np.zeros(num_points)
     return freqs, s21
 
 

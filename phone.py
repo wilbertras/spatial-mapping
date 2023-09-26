@@ -17,8 +17,9 @@ def timestamp():
 
 try:
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
-except:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
+except:
+    print('No phone connected')
 
 devices = client.devices()
 cols = ['nr', 'x', 'y', 'freqs', 's21']
@@ -51,7 +52,9 @@ while running:
         if event.key == pygame.K_ESCAPE:
             running = 0
             date = datetime.today()
-            df.to_pickle('S21s/Scan_'+ timestamp())
+            name = 'S21s/Scan_'+ timestamp()
+            df.to_pickle(name)
+            print('Saved: %s' % name)
         if event.key == pygame.K_BACKSPACE:
             device.shell("input keyevent 67")
             x = 0
@@ -102,7 +105,7 @@ while running:
             elif (x != 0) & (y != 0):
                 print('Please set either x or y to zero for a scan')
             else:
-                freqs, s21 = vna.get_s21(4, 8, 1, 16001)
+                freqs, s21 = vna.get_s21(4, 8, 101, 1000)
                 pygame.time.wait(0)
                 nr_s21 += 1
                 print('Scanned: ', x, y)
