@@ -15,8 +15,11 @@ def timestamp():
     minute = datetime.now().minute
     return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
 
-os.startfile("scrcpy-win64-v211\scrcpy.exe")
-client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
+try:
+    client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
+except:
+    os.startfile("scrcpy-win64-v211\scrcpy.exe")
+
 devices = client.devices()
 cols = ['nr', 'x', 'y', 'freqs', 's21']
 df = pd.DataFrame(columns=cols)
@@ -28,12 +31,18 @@ if len(devices) == 0:
 device = devices[0]
 screen = pygame.display.set_mode((500, 500))
 print(f'Connected to {device}')
+# text_color = 0, 0, 0
+# rect_exc = pygame.draw.rect(100, 100, 30, 50)
+# text_esc = 'ESC: close and save'
+# base_font = pygame.font.Font(None, 32)
+# text_surface = base_font.render(text_esc, True, text_color)
+
 running = 1
 nr_s21 = 0
 x = 0
 y = 0
 while running:
-    # device.shell("input keyevent 67")
+    # screen.blit(text_surface, rect_exc)
     event = pygame.event.poll()
     if event.type == pygame.QUIT:
         running = 0 
@@ -88,8 +97,10 @@ while running:
         if event.key == pygame.K_i:
             device.shell("input keyevent KEYCODE_I")
         if event.key == pygame.K_RETURN:
-            if (nr_s21 == 0) & (x != 0 | y !=0):
-                print('Please set x and y to zero')
+            if (nr_s21 == 0) & (x != 0 | y != 0):
+                print('Please set x and y to zero for the first scan')
+            elif (x != 0) & (y != 0):
+                print('Please set either x or y to zero for a scan')
             else:
                 freqs, s21 = vna.get_s21(4, 8, 1, 16001)
                 pygame.time.wait(0)
