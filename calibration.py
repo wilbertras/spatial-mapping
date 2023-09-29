@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 
-
-
 def read_txt(file_path):
     # Define the delimiter used to separate values in each line
     delimiter = '\t'  # Change this to the appropriate delimiter
@@ -23,21 +21,26 @@ def read_txt(file_path):
 
 
 def make_npy():
-    BF_calib = read_txt(r'calibration files\BlueforsOutput2020_4-8GHz.txt')
-    RF_calib = read_txt(r'calibration files\RFbox_Entropy.txt')
-    np.save('calibration files/BF_calib.npy', BF_calib)
-    np.save('calibration files/RF_calib.npy', RF_calib)
+    BFout = read_txt(r'calibration files\BlueforsOutput2020_4-8GHz.txt')
+    BFin = read_txt(r'calibration files\BlueforsInput2020.txt')
+    RFout = read_txt(r'calibration files\RFbox_Entropy.txt')
+
+    np.save('calibration files/BFout.npy', BFout)
+    np.save('calibration files/BFin.npy', BFin)
+    np.save('calibration files/RFout.npy', RFout)
 
 
 def plot_calib_files():
-    BF_calib = np.load('calibration files/BF_calib.npy')
-    RF_calib = np.load('calibration files/RF_calib.npy')
+    BFout = np.load('calibration files/BFout.npy')
+    BFin = np.load('calibration files/BFin.npy')
+    RFout = np.load('calibration files/RFout.npy')
     fig, ax = plt.subplots()
-    ax.plot(BF_calib[:, 0], BF_calib[:, 1], label='BF')
-    ax.plot(RF_calib[:, 0], RF_calib[:, 1], label='RFcol1')
-    ax.plot(RF_calib[:, 0], RF_calib[:, 2], label='RFcol2')
-    bf = interp1d(BF_calib[:, 0], BF_calib[:, 1])
-    rf = interp1d(RF_calib[:, 0], RF_calib[:, 1])
+    ax.plot(BFout[:, 0], BFout[:, 1], label='BFout')
+    ax.plot(BFin[:, 0], BFin[:, 1], label='BFin')
+    ax.plot(RFout[:, 0], RFout[:, 1], label='RFcol1')
+    ax.plot(RFout[:, 0], RFout[:, 2], label='RFcol2')
+    bf = interp1d(BFout[:, 0], BFout[:, 1])
+    rf = interp1d(RFout[:, 0], RFout[:, 1])
     ax.set_title('Calibration curves')
     ax.set_xlabel('F [GHz]')
     ax.set_ylabel('P [dBm]')
@@ -46,5 +49,5 @@ def plot_calib_files():
 
 
 ## Uncomment the two functions below to generate and plot the calbration files
-# make_npy()
+make_npy()
 plot_calib_files()
