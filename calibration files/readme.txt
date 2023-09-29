@@ -3,6 +3,7 @@ We want to input desired power at KID and compute what power that translated to 
 # KIDpower + KID_cryoOUT + GainRFbox(freq) - Weinschell = P@VNAin
 # KIDpower + KID_cryoOUTp + GainRFbox(freq)-P@VNAin=W
 
+Output
 0. Input KIDpower
 1. KID_cryoOUt obtained from BleuforsOutput2022_4-8GHz.txt 
 2. Interpolate at F0 to get the correct value
@@ -15,3 +16,7 @@ We want to input desired power at KID and compute what power that translated to 
 9. Clip PcryoOUt to even number, Weinschell=round(PryoOUt / 2)*2, write to VNA
 10. Power into VNA@F0=KIDpower + KID_cryoOUT + GainRFbox - Weinschell
 
+Input
+0. Input KIDpower
+1. KID_cryoIn from interpolating BlueforsInput2020.txt
+2. PVNA = KIDpower - KID_cryoIn
