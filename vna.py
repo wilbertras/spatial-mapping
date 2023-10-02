@@ -1,7 +1,6 @@
 import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 
 def get_s21(f0, bw, num_points, power, ifbw, timeout=3000000):
