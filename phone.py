@@ -1,7 +1,7 @@
 import time
 from ppadb.client import Client as AdbClient
 import pygame
-import vna
+# import vna
 import pandas as pd
 from datetime import datetime
 import os
@@ -105,7 +105,8 @@ while running:
             elif (x != 0) & (y != 0):
                 print('Please set either x or y to zero for a scan')
             else:
-                freqs, s21 = vna.get_s21(4, 8, 101, 1000)
+                # freqs, s21 = vna.get_s21(4, 8, 101, 1000)
+                freqs, s21 = 0
                 pygame.time.wait(0)
                 nr_s21 += 1
                 print('Scanned: ', x, y)
