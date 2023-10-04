@@ -1,6 +1,7 @@
 import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
+import win32com.client
 
 
 def get_s21(f0, bw, num_points, power, ifbw, timeout=3000000):
@@ -41,7 +42,8 @@ def get_s21(f0, bw, num_points, power, ifbw, timeout=3000000):
         else:
             s21 = np.zeros(num_points)
     except Exception as err: 
-        print("Exception:"+str(err.message))  
+        print("Exception")  
+        s21 = np.zeros(freqs.shape)
     finally:
         print("Sweep complete")
     return freqs, s21
@@ -76,4 +78,28 @@ def plot_s21(freqs, s21):
     plt.show()
 
 
-freqs, s21 = get_s21(6, 0.1, 101, -110, 10000)
+def run_labview():
+    # Create a LabVIEW Automation object
+    lv = win32com.client.Dispatch("LabVIEW.Application")
+
+    # Load a VI (Virtual Instrument) file
+    vi_path = r'D:\JBtests_labview\VNASWEEP2.vi'
+    vi = lv.GetVIReference(vi_path)
+    # vi.SetControlValue("Cooler", 'Bluefors')
+    # vi.SetControlValue("AmpNew", 'BF LNF 4-8 + Miteq')
+    # vi.SetControlValue("Fstart GHz", 4)
+    # vi.SetControlValue("Fstop GHz", 6)
+    # vi.SetControlValue("BW per Scan [MHz]", 100)
+    # vi.SetControlValue("# pts per scan", 6401)
+    # vi.SetControlValue("KID Power", -110)
+    vi.SetControlValue("IF Bandwidth (Hz)", 10000)
+    # Close LabVIEW
+    # Run the VI
+    vi.Call()
+    # Set input parameter values (assuming your VI has a numeric control named "InputParameter")
+
+    lv.Quit()
+
+
+run_labview()
+# freqs, s21 = get_s21(6, 0.1, 101, -59, 10000)
