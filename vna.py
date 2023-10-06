@@ -89,10 +89,10 @@ def run_labview():
     # vi.SetControlValue("AmpNew", 'BF LNF 4-8 + Miteq')
     # vi.SetControlValue("Fstart GHz", 4)
     # vi.SetControlValue("Fstop GHz", 6)
-    # vi.SetControlValue("BW per Scan [MHz]", 100)
+    vi.SetControlValue("BW_per_Scan_[MHz]", 100)
     # vi.SetControlValue("# pts per scan", 6401)
     # vi.SetControlValue("KID Power", -110)
-    vi.SetControlValue("IF Bandwidth (Hz)", 10000)
+    # vi.SetControlValue("IF Bandwidth (Hz)", 10000)
     # Close LabVIEW
     # Run the VI
     vi.Call()
