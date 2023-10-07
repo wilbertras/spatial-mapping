@@ -1,0 +1,137 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal as sg
+
+# Importing datasets from /spatial-mapping/S21s
+def importsort_S21s(filename):
+    dataset = '/Users/gabriellomans/Desktop/Uni/TUD/BEP/Code/spatial-mapping/S21s/%s' % filename
+    data = np.genfromtxt(dataset,
+                        names = True,
+                        dtype = None,
+                        delimiter = '')
+    N = len(data)
+    f,s21,dd = np.zeros(N),np.zeros(N),np.zeros(N)
+    for i in range(N):
+        f[i],s21[i],dd[i] = data[i][0],data[i][1],data[i][2]
+    return f,s21,dd,filename
+
+# Performing and plotting dip detection 
+def dipplot(x,y,prom):
+    dips,_ = sg.find_peaks(-y, prominence = prom)
+    Ndips = len(dips)
+    return [dips, Ndips]
+
+# Plotting single datafile with dip detection
+def plotone(plots, m, dm, dip, prom):
+    plt.figure(figsize = (15,5))
+    
+    if dip == True:
+        plt.plot(plots[0], plots[1], label = '%s' % plots[3])
+        
+        dips = dipplot(plots[0], plots[1], prom)[0]
+        Ndips = dipplot(plots[0], plots[1], prom)[1]
+        plt.plot(plots[0][dips], plots[1][dips], 'o', label = '%s dips' % Ndips)
+    elif dip == False:
+        plt.plot(plots[0], plots[1], label = '%s' % plots[3])
+        
+    xbot = m - 0.5*dm
+    xtop = m + 0.5*dm
+    
+    plt.xlabel('f (GHz)')
+    plt.ylabel('$|S_{21}| (dB)$')
+    plt.xlim(xbot,xtop)
+    plt.title('Plot %s' % plots[3])
+    plt.legend()
+    plt.show()
+
+# Plotting multiple datafiles
+def plotcompare(plots, m, dm, dip, prom):
+    plt.figure(figsize = (15,5))
+    
+    if dip == True:
+        for i in range(len(plots)):
+            plt.plot(plots[i][0], plots[i][1], label = '%s' % plots[i][3])
+            
+            dips = dipplot(plots[i][0], plots[i][1], prom)[0]
+            Ndips = dipplot(plots[i][0], plots[i][1], prom)[1]
+            plt.plot(plots[i][0][dips], plots[i][1][dips], 'o', label = '%s dips' % Ndips)
+    elif dip == False:
+        for i in range(len(plots)):
+            plt.plot(plots[i][0], plots[i][1], label = '%s' % plots[i][3])
+        
+    xbot = m - 0.5*dm
+    xtop = m + 0.5*dm
+    
+    plt.xlabel('f (GHz)')
+    plt.ylabel('$|S_{21}| (dB)$')
+    plt.xlim(xbot,xtop)
+    plt.title('Plot comparison')
+    plt.legend()
+    plt.show()
+
+# Plotting two datafiles below one another with similar x-axis
+def plot_simx(plots, m, dm, vline, dip, prom):
+    # Plot
+    fig,axs = plt.subplots(2,1,sharex=True,figsize=(15,8))
+    fig.subplots_adjust(hspace=0)
+    
+    # Decide plotting dips
+    if dip == True:
+        axs[0].plot(plots[0], plots[1], label = '$|S_{21}|$')
+        axs[1].plot(plots[0], plots[2], label = 'Double derivative')
+        
+        # S_21 dips
+        prom1 = prom[0]
+        dips1 = dipplot(plots[0], plots[1], prom1)[0]
+        Ndips1 = dipplot(plots[0], plots[1], prom1)[1]
+        axs[0].plot(plots[0][dips1], plots[1][dips1], 'o', label = '%s dips' % Ndips1)
+        
+        # Double derivative peaks
+        prom2 = prom[1]
+        peaks2 = dipplot(plots[0], -plots[2], prom2)[0]
+        Npeaks2 = dipplot(plots[0], -plots[2], prom2)[1]
+        axs[1].plot(plots[0][peaks2], plots[2][peaks2], 'o', label = '%s peaks' % Npeaks2)
+        
+        # Double derivative dips
+        dips2 = dipplot(plots[0], plots[2], prom2)[0]
+        Ndips2 = dipplot(plots[0], plots[2], prom2)[1]
+        axs[1].plot(plots[0][dips2], plots[2][dips2], 'o', label = '%s dips' % Ndips2)
+    elif dip == False:
+        axs[0].plot(plots[0], plots[1], label = '$|S_{21}|$')
+        axs[1].plot(plots[0], plots[2], label = 'Double derivative')
+    
+    # Decide centering
+    xbot = m - 0.5*dm
+    xtop = m + 0.5*dm
+    axs[0].set_xlim(xbot,xtop)
+    axs[1].set_xlim(xbot,xtop)
+    
+    # Decide plotting vline
+    if vline != 0:
+        axs[0].axvline(vline,c='r')
+        axs[1].axvline(vline,c='r')
+    else:
+        None
+        
+    axs[0].set_xlabel('f (GHz)')
+    axs[0].set_ylabel('$|S_{21}| (dB)$')  
+    axs[0].legend()
+    axs[1].set_xlabel('f (GHz)')
+    axs[1].set_ylabel('Double Derivative')
+    axs[1].legend()
+    
+    axs[0].title.set_text('Plot %s' % plots[3])
+    plt.show()
+
+############################### Printing field ###############################
+# Sorting plots into list 
+plotS21_halfgroen = importsort_S21s('S21_halfgroen')
+plotS21_anderehalfgroen = importsort_S21s('S21_anderehalfgroen')
+plotS21_lichtaan = importsort_S21s('S21_lichtaan')
+plots = [plotS21_lichtaan, plotS21_halfgroen, plotS21_anderehalfgroen]
+
+# Printing comparison of green illumnated MKIDs with dip detection
+#plotcompare(plots, 5.635, 0.05, 1, 5)
+
+# Print figure with both S21 data and the double derivative with dip detection
+plot_simx(plotS21_halfgroen, 5.4, 0.1, 5.39, 1, [5,1])

@@ -111,3 +111,10 @@ while running:
                 nr_s21 += 1
                 print('Scanned: ', x, y)
                 df.loc[len(df.index)] = [nr_s21, x, y, freqs, s21]
+
+# W = width (Q = skinnier, E = fatter)
+# Y = ystep (T = negative y, U = positive y)
+# X = xstep (Z = negative x, C = positive x)
+# I = invert screen
+# [backspace] = initial position
+# [arrows] = move across the screen
