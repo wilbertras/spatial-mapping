@@ -1,4 +1,3 @@
-import time
 from ppadb.client import Client as AdbClient
 import pygame
 # import vna
@@ -188,7 +187,4 @@ while running:
 # Quit Pygame
 pygame.quit()
 sys.exit()
-
-
-
 
