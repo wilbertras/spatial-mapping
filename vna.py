@@ -2,51 +2,77 @@ import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 import win32com.client
+from scipy.interpolate import interp1d
 
 
-def get_s21(f0, bw, num_points, power, ifbw, timeout=3000000):
-    freqs = np.linspace(f0-bw/2, f0+bw/2, num_points)
-    VISA = "GPIB0::16::INSTR"
-    try:
-        rm = pyvisa.ResourceManager() 
-        vna = rm.open_resource(VISA)
-        vna.timeout = timeout
-        if vna.query('*IDN?;'):
-            print("Connected to VNA:", vna.query('*IDN?;'))
-            # Configure VNA parameters (example)
-            kidname = 'kidx, timex'
-            par = 'S21'
-            # _, status = vna.write(f'OUTP ON;')
-            # _, status = vna.write(f'MMEMORY:LOAD "D:\KIDS\KIDs.csa";')  # Define S21 measurement
-            # _, status = vna.write(f'*OPC;')
-            # _, status = vna.write(f'SENS1:SWE:TRIG:POIN OFF; TRIG:SCOP CURR; INIT1:CONT ON;')
-            # _, status = vna.write(f'disp:wind1:trac1:DEL;')
-            # _, status = vna.write(f'CALC1:PAR:DEF "{kidname}", "{par}"')
-            # _, status = vna.write(f'CALC1:PAR:SEL "{kidname}";')
-            # _, status = vna.write(f'disp:wind1:trac1:feed "{kidname}";')
-            # _, status = vna.write(f'DISP:WIND1:TRAC1:Y:AUTO')
-            _, status = vna.write(f'SENS1:FREQ:CENT {f0}GHz; SENS1:FREQ:SPAN {bw}GHz; SENS1:BWID {ifbw}Hz; SENS1:SWE:POIN {num_points}; SENS1:PAR:S21:FORM MLOG;SOUR1:POW1:LEV {power};')
-            # vna.write(f'SENS1:FREQ:SPAN {bw}GHz;')
-            # vna.write(f'SENS1:BWID {ifbw}Hz;')
-            # vna.write(f'SENS1:SWE:POIN {num_points};')  # Set the number of sweep points
-            # vna.write(f'SENS1:PAR:S21:FORM MLOG;')
-            # vna.write(f'SOUR1:POW1:LEV {power};')
-            vna.write('FORM:DATA ASCII')
-            # Trigger a single sweep
-            vna.write(f'INIT:IMM;')
+def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, timeout=3000000):
+    BFout = np.load('calibration files/BFout.npy')
+    BFin = np.load('calibration files/BFin.npy')
+    RFout = np.load('calibration files/RFout.npy')
+    bfout = interp1d(BFout[:, 0], BFout[:, 1])
+    bfin = interp1d(BFin[:, 0], BFin[:, 1])
+    rfout = interp1d(RFout[:, 0], RFout[:, 1])
 
-            # Wait for the measurement to complete (you may need to adjust the wait time)
-            response = vna.write(f'CALC1:DATA? FDATA;')
-            s21 = np.array(response)
-            vna.close()
-        else:
-            s21 = np.zeros(num_points)
-    except Exception as err: 
-        print("Exception")  
-        s21 = np.zeros(freqs.shape)
-    finally:
-        print("Sweep complete")
+    totscanbw = fstop - fstart
+    num_subscans = int(np.ceil(totscanbw / subscanbw))
+    realfstart = fstart
+    realfstop = fstart + num_subscans * subscanbw
+    f0start = realfstart + subscanbw / 2
+    freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
+    s21 = []
+    for i in range(num_subscans):
+        f0 = f0start + i*subscanbw
+        if i == 0:
+            KID_cryoOUt = bfout(f0)
+            GainRFbox = rfout(f0)
+            PcryoOUt = kidpower + KID_cryoOUt + GainRFbox
+            PVNAin = PcryoOUt - 2
+            if PVNAin > 62:
+                att = 62
+                print('PVNAin > 62')
+            elif PVNAin < 2:
+                att = 2
+                print('PVNAin < 2')
+            else:
+                att = PVNAin
+            weinschell = np.round(att / 2) * 2
+        # set_weinschell(weinschell)
+        KID_cryoIn = bfin(f0)
+        vna_power = kidpower - KID_cryoIn
+        subscan = vna_scan(f0, subscanbw, num_points, vna_power, ifbw)
+        s21.append(subscan)
+    s21 = np.array(s21)
     return freqs, s21
+
+
+def vna_scan(f0, subscanbw, num_points, vna_power, ifbw, timeout=300000):
+    VISA = "GPIB0::16::INSTR"
+    rm = pyvisa.ResourceManager() 
+    vna = rm.open_resource(VISA)
+    vna.timeout = timeout
+    if vna.query('*IDN?'):
+        print("Connected to VNA:", vna.query('*IDN?;'))
+        vna.write(f'SENS1:FREQ:CENT {f0}GHz')
+        vna.write(f'SENS1:FREQ:SPAN {subscanbw}GHz')
+        vna.write(f'SENS1:BWID {ifbw}Hz;')
+        vna.write(f'SENS1:SWE:POIN {num_points};')  # Set the number of sweep points
+        vna.write(f'SENS1:PAR:S21:FORM MLOG;')
+        vna.write(f'SOUR1:POW1:LEV {vna_power};')
+        vna.write('FORM:DATA ASCII')
+        # Trigger a single sweep
+        vna.write(f'INIT:IMM;')
+        # Wait for the measurement to complete (you may need to adjust the wait time)
+        try:
+            response = vna.query_ascii_values(f'CALC1:DATA? FDATA')
+            s21 = np.array(response)
+        except:
+            s21 = np.zeros(num_points)
+            print('No data gathered')
+        vna.close()
+    else:
+        s21 = np.zeros(num_points)
+        vna.close()
+    return s21
 
 
 def set_weinschell(attn):
@@ -102,4 +128,5 @@ def run_labview():
 
 
 # run_labview()
-# # freqs, s21 = get_s21(6, 0.1, 101, -59, 10000)
+freqs, s21 = get_s21(4, 6, 0.1, 3201, -110, 10000)
+print(s21.shape)

@@ -1,4 +1,8 @@
 Calibration procedure as understood from the various labview files
+The power out the cryostat and into the VNA hould be less than 0: P@VNAin < 0. This means that the Weinschell attanuator channel 1 should attenuate the power such that it in below 0.
+If P@VNAin < 0, the weinschell attanuation is set to 
+
+
 We want to input desired power at KID and compute what power that translated to at VNA
 # KIDpower + KID_cryoOUT + GainRFbox(freq) - Weinschell = P@VNAin
 # KIDpower + KID_cryoOUTp + GainRFbox(freq)-P@VNAin=W
