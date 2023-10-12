@@ -101,5 +101,5 @@ def run_labview():
     lv.Quit()
 
 
-run_labview()
-# freqs, s21 = get_s21(6, 0.1, 101, -59, 10000)
+# run_labview()
+# # freqs, s21 = get_s21(6, 0.1, 101, -59, 10000)

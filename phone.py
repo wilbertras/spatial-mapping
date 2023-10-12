@@ -17,7 +17,7 @@ def timestamp():
 
 try:
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
-    os.startfile("scrcpy-win64-v211\scrcpy.exe")
+    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
 except:
     print('No phone connected')
 
@@ -37,30 +37,44 @@ pygame.init()
 # Constants
 WIDTH, HEIGHT = 500, 500
 BACKGROUND_COLOR = (0, 0, 0)
-TEXT_COLOR = (255, 255, 255)
-FONT_SIZE = 20
-FONT = pygame.font.Font(None, FONT_SIZE)
+TEXT_COLOR = (0, 255, 0)
 COLUMN_WIDTH = WIDTH // 2
-BOX_HEIGHT = HEIGHT // 5
+SMALL_BOX_HEIGHT = HEIGHT // 8
+BIG_BOX_HEIGHT = HEIGHT // 2
+SMALL_FONT_SIZE = 20
+BIG_FONT_SIZE = 30
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 
-def draw_text_boxes(text_list):
+def draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR):
+    y=0
     for i, text in enumerate(text_list):
         row = i // 2
         col = i % 2
+        if row==0:
+            BOX_HEIGHT = BIG_BOX_HEIGHT
+            FONT_SIZE = BIG_FONT_SIZE
+            y = 0
+        else:
+            y = BIG_BOX_HEIGHT + (row-1)*SMALL_BOX_HEIGHT
+            BOX_HEIGHT = SMALL_BOX_HEIGHT
+            FONT_SIZE = SMALL_FONT_SIZE
         x = col * COLUMN_WIDTH
-        y = row * BOX_HEIGHT
         pygame.draw.rect(screen, BACKGROUND_COLOR, (x, y, COLUMN_WIDTH, BOX_HEIGHT), 0)
-        
+        pygame.draw.rect(screen, TEXT_COLOR, (x, y, COLUMN_WIDTH, BOX_HEIGHT), 1)
         # Split the text into two lines
         lines = text.split('\n')
         
         # Render each line of text
         for j, line in enumerate(lines):
+            if j==0:
+                FONT_SIZE = BIG_FONT_SIZE
+            else:
+                FONT_SIZE = SMALL_FONT_SIZE
+            FONT = pygame.font.Font(None, FONT_SIZE)
             text_surface = FONT.render(line, True, TEXT_COLOR)
-            text_rect = text_surface.get_rect(center=(x + COLUMN_WIDTH // 2, y + (j * FONT_SIZE) + (BOX_HEIGHT // 4)))
+            text_rect = text_surface.get_rect(center=(x + COLUMN_WIDTH // 2, y + (j * FONT_SIZE) + (BOX_HEIGHT // 2)))
             screen.blit(text_surface, text_rect)
 
 running = 1
@@ -74,25 +88,27 @@ stepsize_x = 1
 stepsize_y = 1
 nr_scans = 0
 restart = 1
+inverted = 0
+green = 1
 while running:
     if restart:
         device.shell("input keyevent 67")
         restart = 0
 
     text_list = [
-    '(X, Y) = (' + str(x) + ', ' + str(y) + ')',
-    '(scan X, scan Y) = (' + str(scan_x) + ', ' + str(scan_y) + ') \n Set scan X to 0 = X, Set scan Y to 0 = Y',
-    'stepsize X = ' + str(stepsize_x) + '\n -1 = Z; +1 = C',
-    'stepsize Y = ' + str(stepsize_y) + '\n -1 = T; +1 = U',
-    'linewidth = ' + str(linewidth) + '\n -1 = Q, +1 = E',
-    'nr of scans = ' + str(nr_s21) + '\n Make scan = Enter',
+    'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
+    'X_scan, Y_scan = ' + str(scan_x) + ', ' + str(scan_y) + '\n Set2Zero = X, Y',
+    'dX = ' + str(stepsize_x) + '\n -/+ = Z/C',
+    'dY = ' + str(stepsize_y) + '\n -/+ = T/U',
+    'w = ' + str(linewidth) + '\n -/+ = Q/E',
+    '# scans = ' + str(nr_s21) + '\n Make scan = Enter',
     'invert screen = I',
     'green/white line = G',
     'reset lines = Backspace',
     'quit and save = Esc',
     ]
     screen.fill(BACKGROUND_COLOR)
-    draw_text_boxes(text_list)
+    draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR)
 
     event = pygame.event.poll()
     if event.type == pygame.QUIT:
@@ -115,16 +131,16 @@ while running:
             nr_s21 = 0
         if event.key == pygame.K_DOWN:
             device.shell("input keyevent KEYCODE_DPAD_DOWN")
-            y += stepsize_y
-            scan_y += stepsize_y
-        if event.key == pygame.K_UP:
-            device.shell("input keyevent KEYCODE_DPAD_UP")
             if y - stepsize_y <= 0:
                 scan_y -= y
                 y = 0
             else:
                 y -= stepsize_y
                 scan_y -= stepsize_y
+        if event.key == pygame.K_UP:
+            device.shell("input keyevent KEYCODE_DPAD_UP")
+            y += stepsize_y
+            scan_y += stepsize_y
         if event.key == pygame.K_RIGHT:
             device.shell("input keyevent KEYCODE_DPAD_RIGHT")
             x += stepsize_x
@@ -142,7 +158,10 @@ while running:
             linewidth += 1
         if event.key == pygame.K_q:
             device.shell("input keyevent KEYCODE_Q")
-            linewidth -= 1
+            if linewidth == 1:
+                linewidth = 1
+            else:
+                linewidth -= 1
         if event.key == pygame.K_c:
             device.shell("input keyevent KEYCODE_C")
             stepsize_x += 1
@@ -170,6 +189,25 @@ while running:
             print('scan_y = 0')
         if event.key == pygame.K_i:
             device.shell("input keyevent KEYCODE_I")
+            if inverted:
+                BACKGROUND_COLOR = 0, 0, 0
+                TEXT_COLOR = 0, 255, 0
+                inverted = 0
+            else:
+                BACKGROUND_COLOR = 255, 255, 255
+                TEXT_COLOR = 0, 0, 0
+                inverted = 1
+        if event.key == pygame.K_g:
+            device.shell("input keyevent KEYCODE_G")
+            if inverted:
+                pass
+            else:
+                if green:
+                    TEXT_COLOR = 255, 255, 255
+                    green = 0
+                else:
+                    TEXT_COLOR = 0, 255, 0
+                    green = 1
         if event.key == pygame.K_RETURN:
             if (nr_s21 == 0) & (scan_x != 0 | scan_y != 0):
                 print('Please set scan_x and scan_y to zero for the first scan')
