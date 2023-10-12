@@ -34,9 +34,16 @@ print(f'Connected to {device}')
 
 pygame.init()
 # Constants
+red = 255, 0, 0
+green = 0, 255, 0
+blue = 0, 0, 255
+white = 255, 255, 255
+black = 0, 0, 0
+colors = [green, white, red, blue]
+color_cycle = 0
 WIDTH, HEIGHT = 500, 500
-BACKGROUND_COLOR = (0, 0, 0)
-TEXT_COLOR = (0, 255, 0)
+BACKGROUND_COLOR = black
+TEXT_COLOR = green
 COLUMN_WIDTH = WIDTH // 2
 SMALL_BOX_HEIGHT = HEIGHT // 8
 BIG_BOX_HEIGHT = HEIGHT // 2
@@ -93,7 +100,7 @@ green = 1
 nr_x_scans = 0
 nr_y_scans = 0
 measure = 0
-wait = 500
+wait = 100
 
 ## Input S21 parameters
 fstop = 6  # GHz
@@ -116,13 +123,13 @@ while running:
         restart = 0
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
-    '# X scans, # Y scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned) + '\n Set2Zero = X, Y',
-    'dX = ' + str(stepsize_x) + '\n -/+ = Z/C',
-    'dY = ' + str(stepsize_y) + '\n -/+ = T/U',
-    'w = ' + str(linewidth) + '\n -/+ = Q/E',
+    '# X scans, # Y scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned),
+    'dX = ' + str(stepsize_x) + '\n -1/0/+1 = Z/X/C',
+    'dY = ' + str(stepsize_y) + '\n -1/0/+1 = T/Y/U',
+    'w = ' + str(linewidth) + '\n -1/0/+1 = Q/W/E',
     '# scans = ' + str(nr_s21) + '\n Make scan = Enter',
     'invert screen = I',
-    'green/white line = G',
+    'Change color = G \nCycles White,Red,Blue,Green',
     'reset lines = Backspace',
     'quit and save = Esc',
     ]
@@ -250,12 +257,12 @@ while running:
             device.shell("input keyevent KEYCODE_I")
             pygame.time.wait(wait)
             if inverted:
-                BACKGROUND_COLOR = 0, 0, 0
-                TEXT_COLOR = 0, 255, 0
+                BACKGROUND_COLOR = black
+                TEXT_COLOR = green
                 inverted = 0
             else:
-                BACKGROUND_COLOR = 255, 255, 255
-                TEXT_COLOR = 0, 0, 0
+                BACKGROUND_COLOR = white
+                TEXT_COLOR = black
                 inverted = 1
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
@@ -263,12 +270,8 @@ while running:
             if inverted:
                 pass
             else:
-                if green:
-                    TEXT_COLOR = 255, 255, 255
-                    green = 0
-                else:
-                    TEXT_COLOR = 0, 255, 0
-                    green = 1
+                color_cycle += 1
+                TEXT_COLOR = colors[color_cycle % 4]
         if event.key == pygame.K_RETURN:
                 if linewidth != 1:
                     print('Putting w to 1')
