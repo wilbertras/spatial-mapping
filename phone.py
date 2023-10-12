@@ -1,9 +1,10 @@
 from ppadb.client import Client as AdbClient
 import pygame
 # import vna
-import pandas as pd
+import numpy as np
 from datetime import datetime
 import os
+import matplotlib.pyplot as plt
 import sys
 
 
@@ -17,13 +18,11 @@ def timestamp():
 
 try:
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
-    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
+    os.startfile("scrcpy-win64-v211\scrcpy.exe")
 except:
     print('No phone connected')
 
 devices = client.devices()
-cols = ['nr', 'x', 'y', 'freqs', 's21']
-df = pd.DataFrame(columns=cols)
 
 if len(devices) == 0:
     print('No devices')
@@ -77,12 +76,13 @@ def draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR):
             text_rect = text_surface.get_rect(center=(x + COLUMN_WIDTH // 2, y + (j * FONT_SIZE) + (BOX_HEIGHT // 2)))
             screen.blit(text_surface, text_rect)
 
+## Initiate scanning paramaters
 running = 1
 nr_s21 = 0
 x = 0
 y = 0
-scan_x = 0
-scan_y = 0
+nr_x_scanned = 0
+nr_y_scanned = 0
 linewidth = 1
 stepsize_x = 1
 stepsize_y = 1
@@ -90,14 +90,33 @@ nr_scans = 0
 restart = 1
 inverted = 0
 green = 1
+nr_x_scans = 0
+nr_y_scans = 0
+measure = 0
+wait = 500
+
+## Input S21 parameters
+fstop = 6  # GHz
+fstart = 4  # GHz
+totscanbw = fstop - fstart
+num_points = 6401
+subscanbw = 0.1  # GHz
+num_subscans = int(np.ceil(totscanbw / subscanbw))
+len_s21 = int(num_subscans * num_points)
+realfstart = fstart
+realfstop = fstart + num_subscans * subscanbw
+f0start = realfstart + subscanbw / 2
+kidpower = -110
+ifbw = 10000  # Hz
+
 while running:
     if restart:
         device.shell("input keyevent 67")
+        pygame.time.wait(wait)
         restart = 0
-
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
-    'X_scan, Y_scan = ' + str(scan_x) + ', ' + str(scan_y) + '\n Set2Zero = X, Y',
+    '# X scans, # Y scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned) + '\n Set2Zero = X, Y',
     'dX = ' + str(stepsize_x) + '\n -/+ = Z/C',
     'dY = ' + str(stepsize_y) + '\n -/+ = T/U',
     'w = ' + str(linewidth) + '\n -/+ = Q/E',
@@ -109,7 +128,38 @@ while running:
     ]
     screen.fill(BACKGROUND_COLOR)
     draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR)
-
+    if measure:
+        if nr_x_scanned < nr_x_scans:
+            plt.close()
+            s21 = np.zeros((1, 1, len_s21))
+            s21s[nr_x_scanned, 0, :] = s21
+            nr_x_scanned += 1
+            if nr_x_scanned < nr_x_scans:
+                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                pygame.time.wait(wait)
+                x += 1
+            fig, ax = plt.subplots()
+            ax.plot(s21[0, 0, :])
+            plt.draw()
+        if (nr_x_scanned == nr_x_scans) & (nr_y_scanned < nr_y_scans):
+            plt.close()
+            s21 = np.zeros((1, 1, len_s21))
+            s21s[0, nr_y_scanned, :] = s21
+            nr_y_scanned += 1
+            if nr_y_scanned < nr_y_scans:
+                device.shell("input keyevent KEYCODE_DPAD_UP")
+                pygame.time.wait(wait)
+                y += 1
+            fig, ax = plt.subplots()
+            ax.plot(s21[0, 0, :])
+            plt.draw()
+        if nr_y_scanned == nr_y_scans:
+            measure = 0
+            date = datetime.today()
+            name = 'S21s/Scan_'+ timestamp() + '.npy'
+            np.save(name, s21s)
+            print('Saved: %s' % name)
+    
     event = pygame.event.poll()
     if event.type == pygame.QUIT:
         running = 0 
@@ -117,12 +167,9 @@ while running:
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             running = 0
-            date = datetime.today()
-            name = 'S21s/Scan_'+ timestamp()
-            df.to_pickle(name)
-            print('Saved: %s' % name)
         if event.key == pygame.K_BACKSPACE:
             device.shell("input keyevent 67")
+            pygame.time.wait(wait)
             x = 0
             y = 0
             linewidth = 1
@@ -131,64 +178,77 @@ while running:
             nr_s21 = 0
         if event.key == pygame.K_DOWN:
             device.shell("input keyevent KEYCODE_DPAD_DOWN")
+            pygame.time.wait(wait)
             if y - stepsize_y <= 0:
-                scan_y -= y
                 y = 0
             else:
                 y -= stepsize_y
-                scan_y -= stepsize_y
         if event.key == pygame.K_UP:
             device.shell("input keyevent KEYCODE_DPAD_UP")
+            pygame.time.wait(wait)
             y += stepsize_y
-            scan_y += stepsize_y
         if event.key == pygame.K_RIGHT:
             device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+            pygame.time.wait(wait)
             x += stepsize_x
-            scan_x += stepsize_x
         if event.key == pygame.K_LEFT:
             device.shell("input keyevent KEYCODE_DPAD_LEFT")
+            pygame.time.wait(wait)
             if x - stepsize_x <= 0:
-                scan_x -= x
                 x = 0
             else:
                 x -= stepsize_x
-                scan_x -= stepsize_x
         if event.key == pygame.K_e:
             device.shell("input keyevent KEYCODE_E")
+            pygame.time.wait(wait)
             linewidth += 1
         if event.key == pygame.K_q:
             device.shell("input keyevent KEYCODE_Q")
+            pygame.time.wait(wait)
             if linewidth == 1:
                 linewidth = 1
             else:
                 linewidth -= 1
         if event.key == pygame.K_c:
             device.shell("input keyevent KEYCODE_C")
+            pygame.time.wait(wait)
             stepsize_x += 1
         if event.key == pygame.K_z:
             device.shell("input keyevent KEYCODE_Z")
+            pygame.time.wait(wait)
             if stepsize_x == 1:
                 stepsize_x = 1
             else:
                 stepsize_x -= 1
         if event.key == pygame.K_u:
             device.shell("input keyevent KEYCODE_U")
+            pygame.time.wait(wait)
             stepsize_y += 1
         if event.key == pygame.K_t:
             device.shell("input keyevent KEYCODE_T")
+            pygame.time.wait(wait)
             if stepsize_y == 1:
                 stepsize_y = 1
             else:
                 stepsize_y -= 1
         if event.key == pygame.K_x:
-            scan_x = 0
-            print('scan_x = 0')
+            device.shell("input keyevent KEYCODE_X")
+            pygame.time.wait(wait)
+            stepsize_x = 1
+            print('dX = 1')
         if event.key == pygame.K_y:
-            device.shell("input keyevent KEYCODE_T")
-            scan_y = 0
-            print('scan_y = 0')
+            device.shell("input keyevent KEYCODE_Y")
+            pygame.time.wait(wait)
+            stepsize_y = 1
+            print('dY = 1')
+        if event.key == pygame.K_w:
+            device.shell("input keyevent KEYCODE_W")
+            pygame.time.wait(wait)
+            linewidth = 1
+            print('w = 1')
         if event.key == pygame.K_i:
             device.shell("input keyevent KEYCODE_I")
+            pygame.time.wait(wait)
             if inverted:
                 BACKGROUND_COLOR = 0, 0, 0
                 TEXT_COLOR = 0, 255, 0
@@ -199,6 +259,7 @@ while running:
                 inverted = 1
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
+            pygame.time.wait(wait)
             if inverted:
                 pass
             else:
@@ -209,17 +270,25 @@ while running:
                     TEXT_COLOR = 0, 255, 0
                     green = 1
         if event.key == pygame.K_RETURN:
-            if (nr_s21 == 0) & (scan_x != 0 | scan_y != 0):
-                print('Please set scan_x and scan_y to zero for the first scan')
-            elif (scan_x != 0) & (scan_y != 0):
-                print('Please set either scan_x or scan_y to zero for a scan')
-            else:
+                if linewidth != 1:
+                    print('Putting w to 1')
+                    device.shell("input keyevent KEYCODE_W")
+                    pygame.time.wait(wait)
+                elif stepsize_x != 1:
+                    print('Putting dX to 1')
+                    device.shell("input keyevent KEYCODE_X")
+                    pygame.time.wait(wait)
+                elif stepsize_y != 1:
+                    print('Putting dY to 1')
+                    device.shell("input keyevent KEYCODE_Y")
+                    pygame.time.wait(wait) 
+                 
+                nr_x_scans = int(input('Please input the number of scans in x: '))
+                nr_y_scans = int(input('Please input the number of scans in y: '))
+                s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
+                measure = 1
                 # freqs, s21 = vna.get_s21(4, 8, 101, 1000)
-                freqs, s21 = 0, 0
-                pygame.time.wait(0)
-                nr_s21 += 1
-                print('Scanned: ', scan_x, scan_y)
-                df.loc[len(df.index)] = [nr_s21, x, y, scan_x, scan_y, freqs, s21]
+                
     pygame.display.flip()
 
 # Quit Pygame
