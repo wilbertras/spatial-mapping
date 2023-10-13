@@ -124,7 +124,7 @@ green = 1
 nr_x_scans = 0
 nr_y_scans = 0
 measure = 0
-wait = 100
+wait = 50
 
 ## Input S21 parameters
 fstop = 6  # GHz
@@ -322,14 +322,15 @@ while running:
                 cycles2dark = nr_colors - current_color_cycler
                 for i in range(cycles2dark):
                     device.shell("input keyevent KEYCODE_G")
-                    pygame.time.wait(wait)
+                    pygame.time.wait(500)
+                # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
                 dark_s21 = np.zeros((len_s21))
                 name = 'S21s/S21dark_'+ timestamp() + '.npy'
                 np.save(name, dark_s21)
                 print('Saved: %s' % name)
                 for i in range(current_color_cycler):
                     device.shell("input keyevent KEYCODE_G")
-                    pygame.time.wait(wait)
+                    pygame.time.wait(500)
                 measure = 1
     pygame.display.flip()
 pygame.quit()
