@@ -145,7 +145,7 @@ while running:
         if nr_x_scanned < nr_x_scans:
             plt.close()
             s21 = np.zeros((1, 1, len_s21))
-            # freqs, s21 = f.get_s21(vna, fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_x_scans:
@@ -158,7 +158,7 @@ while running:
         if (nr_x_scanned == nr_x_scans) & (nr_y_scanned < nr_y_scans):
             plt.close()
             s21 = np.zeros((1, 1, len_s21))
-            # freqs, s21 = f.get_s21(vna, fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[0, nr_y_scanned, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_y_scans:
