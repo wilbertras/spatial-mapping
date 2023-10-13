@@ -116,8 +116,8 @@ kidpower = -110 # dBm
 ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 
-## Connect to Virtual Intstruments
-vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+## Test connection to Virtual Intstruments
+vna = f.connect2vi("GPIB0::15::INSTR", timeout=3000000)
 weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:

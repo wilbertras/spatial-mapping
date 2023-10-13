@@ -121,6 +121,7 @@ def plot_s21(freqs, s21):
     plt.show()
 
 
+
 # run
 freqs, s21 = get_s21(4, 5, 0.5, 3201, -110, 10000)
 plot_s21(freqs, s21)
