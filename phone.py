@@ -1,11 +1,12 @@
 from ppadb.client import Client as AdbClient
 import pygame
-import functions as f
+# import functions as f
 import numpy as np
 from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 import sys
+from copy import copy
 
 
 def timestamp():
@@ -17,8 +18,8 @@ def timestamp():
     return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
 
 try:
+    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
-    os.startfile("scrcpy-win64-v211\scrcpy.exe")
 except:
     print('No phone connected')
 
@@ -39,60 +40,83 @@ green = 0, 255, 0
 blue = 0, 0, 255
 white = 255, 255, 255
 black = 0, 0, 0
-colors = [green, white, red, blue]
-color_cycle = 0
-WIDTH, HEIGHT = 500, 500
-BACKGROUND_COLOR = black
-TEXT_COLOR = green
-COLUMN_WIDTH = WIDTH // 2
-SMALL_BOX_HEIGHT = HEIGHT // 8
-BIG_BOX_HEIGHT = HEIGHT // 2
-SMALL_FONT_SIZE = 20
-BIG_FONT_SIZE = 30
+colors = [white, blue, green, red, black]
+nr_colors = len(colors)
+color_cycler = 0
+width, height = 600, 500
+bgcolor = black
+linecolor = white
+column_width = width // 2
+small_box_height = height // 8
+big_box_height = height // 2
+small_font_size = 20
+big_font_size = 30
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((width, height))
 
-
-def draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR):
+def draw_text_boxes(text_list, bgcolor, linecolor):
     y=0
     for i, text in enumerate(text_list):
         row = i // 2
         col = i % 2
         if row==0:
-            BOX_HEIGHT = BIG_BOX_HEIGHT
-            FONT_SIZE = BIG_FONT_SIZE
+            BOX_height = big_box_height
+            font_size = big_font_size
             y = 0
         else:
-            y = BIG_BOX_HEIGHT + (row-1)*SMALL_BOX_HEIGHT
-            BOX_HEIGHT = SMALL_BOX_HEIGHT
-            FONT_SIZE = SMALL_FONT_SIZE
-        x = col * COLUMN_WIDTH
-        pygame.draw.rect(screen, BACKGROUND_COLOR, (x, y, COLUMN_WIDTH, BOX_HEIGHT), 0)
-        pygame.draw.rect(screen, TEXT_COLOR, (x, y, COLUMN_WIDTH, BOX_HEIGHT), 1)
+            y = big_box_height + (row-1)*small_box_height
+            BOX_height = small_box_height
+            font_size = small_font_size
+        x = col * column_width
+        pygame.draw.rect(screen, bgcolor, (x, y, column_width, BOX_height), 0)
+        pygame.draw.rect(screen, linecolor, (x, y, column_width, BOX_height), 1)
         # Split the text into two lines
         lines = text.split('\n')
         
         # Render each line of text
         for j, line in enumerate(lines):
             if j==0:
-                FONT_SIZE = BIG_FONT_SIZE
+                font_size = big_font_size
             else:
-                FONT_SIZE = SMALL_FONT_SIZE
-            FONT = pygame.font.Font(None, FONT_SIZE)
-            text_surface = FONT.render(line, True, TEXT_COLOR)
-            text_rect = text_surface.get_rect(center=(x + COLUMN_WIDTH // 2, y + (j * FONT_SIZE) + (BOX_HEIGHT // 2)))
+                font_size = small_font_size
+            FONT = pygame.font.Font(None, font_size)
+            text_surface = FONT.render(line, True, linecolor)
+            text_rect = text_surface.get_rect(center=(x + column_width // 2, y + (j * font_size) + (BOX_height // 2)))
             screen.blit(text_surface, text_rect)
+
+
+screen_width = 1080
+screen_height = 2240
+x_centre = int(screen_width / 2)
+y_centre = int(screen_height / 2)
+length_line_mm = 50
+pxl_mm = 0.06
+length_line_pxl = int(length_line_mm / pxl_mm)
+half_length = int(length_line_pxl / 2)
+y_min = y_centre - half_length
+y_max = y_centre + half_length
+x_min = x_centre - half_length
+x_max = x_centre + half_length
+x_init = x_centre
+y_init = y_centre
+dx_init = 10
+dx_min = 1
+dy_min = 1
+dy_init = 10
+w_init = 5
+w_min = 1
+step = 1
 
 ## Initiate scanning paramaters
 running = 1
 nr_s21 = 0
-x = 0
-y = 0
 nr_x_scanned = 0
 nr_y_scanned = 0
-linewidth = 1
-stepsize_x = 1
-stepsize_y = 1
+w = w_init
+x = x_init
+y = y_init
+dx = dx_init
+dy = dy_init
 nr_scans = 0
 restart = 1
 inverted = 0
@@ -113,12 +137,13 @@ realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
+date = datetime.today()
 
 ## Test connection to Virtual Intstruments
-vna = f.connect2vi("GPIB0::15::INSTR", timeout=3000000)
-weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -128,18 +153,18 @@ while running:
 
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
-    '# X scans, # Y scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned),
-    'dX = ' + str(stepsize_x) + '\n -1/0/+1 = Z/X/C',
-    'dY = ' + str(stepsize_y) + '\n -1/0/+1 = T/Y/U',
-    'w = ' + str(linewidth) + '\n -1/0/+1 = Q/W/E',
+    '#X_scans, #Y_scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned),
+    'dX = ' + str(dx) + '\n -1/=1/+1 = Z/X/C',
+    'dY = ' + str(dy) + '\n -1/=1/+1 = T/Y/U',
+    'w = ' + str(w) + '\n -1/=1/+1 = Q/W/E',
     '# scans = ' + str(nr_s21) + '\n Make scan = Enter',
     'invert screen = I',
-    'Change color = G \nCycles White,Red,Blue,Green',
+    'Change color = G \nCycles White-Blue-Green-Red-Off',
     'reset lines = Backspace',
     'quit and save = Esc',
     ]
-    screen.fill(BACKGROUND_COLOR)
-    draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR)
+    screen.fill(bgcolor)
+    draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
         if nr_x_scanned < nr_x_scans:
@@ -170,8 +195,7 @@ while running:
             plt.draw()
         if nr_y_scanned == nr_y_scans:
             measure = 0
-            date = datetime.today()
-            name = 'S21s/Scan_'+ timestamp() + '.npy'
+            name = 'S21s/S21s_'+ timestamp() + '.npy'
             np.save(name, s21s)
             print('Saved: %s' % name)
     
@@ -185,92 +209,88 @@ while running:
         if event.key == pygame.K_BACKSPACE:
             device.shell("input keyevent 67")
             pygame.time.wait(wait)
-            x = 0
-            y = 0
-            linewidth = 1
-            stepsize_x = 1
-            stepsize_y = 1
+            x = x_init
+            y = y_init
+            w = w_init
+            dx = w_init
+            dy = w_init
             nr_s21 = 0
         if event.key == pygame.K_DOWN:
             device.shell("input keyevent KEYCODE_DPAD_DOWN")
             pygame.time.wait(wait)
-            if y - stepsize_y <= 0:
-                y = 0
-            else:
-                y -= stepsize_y
+            y -= dy
+            if y < y_min:
+                y = y_min
         if event.key == pygame.K_UP:
             device.shell("input keyevent KEYCODE_DPAD_UP")
             pygame.time.wait(wait)
-            y += stepsize_y
+            y += dy
+            if y > y_max:
+                y = y_max
         if event.key == pygame.K_RIGHT:
             device.shell("input keyevent KEYCODE_DPAD_RIGHT")
             pygame.time.wait(wait)
-            x += stepsize_x
+            x += dx
+            if x > x_max:
+                x = x_max
         if event.key == pygame.K_LEFT:
             device.shell("input keyevent KEYCODE_DPAD_LEFT")
             pygame.time.wait(wait)
-            if x - stepsize_x <= 0:
-                x = 0
-            else:
-                x -= stepsize_x
+            x -= dx
+            if x < x_min:
+                x = x_min
         if event.key == pygame.K_e:
             device.shell("input keyevent KEYCODE_E")
             pygame.time.wait(wait)
-            linewidth += 1
+            w += step
         if event.key == pygame.K_q:
             device.shell("input keyevent KEYCODE_Q")
             pygame.time.wait(wait)
-            if linewidth == 1:
-                linewidth = 1
-            else:
-                linewidth -= 1
+            w -= step
+            if w < w_min:
+                w = w_min
         if event.key == pygame.K_c:
             device.shell("input keyevent KEYCODE_C")
             pygame.time.wait(wait)
-            stepsize_x += 1
+            dx += step
         if event.key == pygame.K_z:
             device.shell("input keyevent KEYCODE_Z")
             pygame.time.wait(wait)
-            if stepsize_x == 1:
-                stepsize_x = 1
-            else:
-                stepsize_x -= 1
+            dx -= step
+            if dx < dx_min:
+                dx = dx_min
         if event.key == pygame.K_u:
             device.shell("input keyevent KEYCODE_U")
             pygame.time.wait(wait)
-            stepsize_y += 1
+            dy += step
         if event.key == pygame.K_t:
             device.shell("input keyevent KEYCODE_T")
             pygame.time.wait(wait)
-            if stepsize_y == 1:
-                stepsize_y = 1
-            else:
-                stepsize_y -= 1
+            dy -= step
+            if dy < dy_min:
+                dy = dy_min
         if event.key == pygame.K_x:
             device.shell("input keyevent KEYCODE_X")
             pygame.time.wait(wait)
-            stepsize_x = 1
-            print('dX = 1')
+            dx = 1
         if event.key == pygame.K_y:
             device.shell("input keyevent KEYCODE_Y")
             pygame.time.wait(wait)
-            stepsize_y = 1
-            print('dY = 1')
+            dy = 1
         if event.key == pygame.K_w:
             device.shell("input keyevent KEYCODE_W")
             pygame.time.wait(wait)
-            linewidth = 1
-            print('w = 1')
+            w = 1
         if event.key == pygame.K_i:
             device.shell("input keyevent KEYCODE_I")
             pygame.time.wait(wait)
             if inverted:
-                BACKGROUND_COLOR = black
-                TEXT_COLOR = green
+                bgcolor = black
+                linecolor = white
                 inverted = 0
             else:
-                BACKGROUND_COLOR = white
-                TEXT_COLOR = black
+                bgcolor = white
+                linecolor = black
                 inverted = 1
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
@@ -278,30 +298,40 @@ while running:
             if inverted:
                 pass
             else:
-                color_cycle += 1
-                TEXT_COLOR = colors[color_cycle % 4]
+                color_cycler += 1
+                linecolor = colors[color_cycler % nr_colors]
         if event.key == pygame.K_RETURN:
-                if linewidth != 1:
-                    print('Putting w to 1')
-                    device.shell("input keyevent KEYCODE_W")
-                    pygame.time.wait(wait)
-                elif stepsize_x != 1:
+                if dx != 1:
                     print('Putting dX to 1')
                     device.shell("input keyevent KEYCODE_X")
                     pygame.time.wait(wait)
-                elif stepsize_y != 1:
+                    dx = 1
+                if dy != 1:
                     print('Putting dY to 1')
                     device.shell("input keyevent KEYCODE_Y")
-                    pygame.time.wait(wait) 
-                 
+                    pygame.time.wait(wait)
+                    dy = 1
+
                 nr_x_scans = int(input('Please input the number of scans in x: '))
                 nr_y_scans = int(input('Please input the number of scans in y: '))
-                s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
-                measure = 1
                 
+                s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
+                
+                ## Make dark scan and save it
+                current_color_cycler = copy(color_cycler)
+                cycles2dark = nr_colors - current_color_cycler
+                for i in range(cycles2dark):
+                    device.shell("input keyevent KEYCODE_G")
+                    pygame.time.wait(wait)
+                dark_s21 = np.zeros((len_s21))
+                name = 'S21s/S21dark_'+ timestamp() + '.npy'
+                np.save(name, dark_s21)
+                print('Saved: %s' % name)
+                for i in range(current_color_cycler):
+                    device.shell("input keyevent KEYCODE_G")
+                    pygame.time.wait(wait)
+                measure = 1
     pygame.display.flip()
-
-# Quit Pygame
 pygame.quit()
 sys.exit()
 
