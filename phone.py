@@ -1,6 +1,6 @@
 from ppadb.client import Client as AdbClient
 import pygame
-# import vna
+import functions as f
 import numpy as np
 from datetime import datetime
 import os
@@ -106,21 +106,26 @@ wait = 100
 fstop = 6  # GHz
 fstart = 4  # GHz
 totscanbw = fstop - fstart
-num_points = 6401
+num_points = 3201
 subscanbw = 0.1  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
-len_s21 = int(num_subscans * num_points)
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
-f0start = realfstart + subscanbw / 2
-kidpower = -110
+len_s21 = int(num_subscans * num_points)
+kidpower = -110 # dBm
 ifbw = 10000  # Hz
+freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
+
+## Connect to Virtual Intstruments
+vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
         device.shell("input keyevent 67")
         pygame.time.wait(wait)
         restart = 0
+
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
     '# X scans, # Y scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned),
@@ -135,10 +140,12 @@ while running:
     ]
     screen.fill(BACKGROUND_COLOR)
     draw_text_boxes(text_list, BACKGROUND_COLOR, TEXT_COLOR)
+    
     if measure:
         if nr_x_scanned < nr_x_scans:
             plt.close()
             s21 = np.zeros((1, 1, len_s21))
+            # freqs, s21 = f.get_s21(vna, fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_x_scans:
@@ -151,6 +158,7 @@ while running:
         if (nr_x_scanned == nr_x_scans) & (nr_y_scanned < nr_y_scans):
             plt.close()
             s21 = np.zeros((1, 1, len_s21))
+            # freqs, s21 = f.get_s21(vna, fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[0, nr_y_scanned, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_y_scans:
@@ -290,7 +298,6 @@ while running:
                 nr_y_scans = int(input('Please input the number of scans in y: '))
                 s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
                 measure = 1
-                # freqs, s21 = vna.get_s21(4, 8, 101, 1000)
                 
     pygame.display.flip()
 
