@@ -1,6 +1,6 @@
 from ppadb.client import Client as AdbClient
 import pygame
-# import functions as f
+import functions as f
 import numpy as np
 from datetime import datetime
 import os
@@ -18,7 +18,7 @@ def timestamp():
     return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
 
 try:
-    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
+    os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
 except:
     print('No phone connected')
@@ -40,7 +40,7 @@ green = 0, 255, 0
 blue = 0, 0, 255
 white = 255, 255, 255
 black = 0, 0, 0
-colors = [white, blue, green, red, black]
+colors = [white, blue, green, red]
 nr_colors = len(colors)
 color_cycler = 0
 width, height = 600, 500
@@ -125,6 +125,7 @@ nr_x_scans = 0
 nr_y_scans = 0
 measure = 0
 wait = 50
+dark = 0
 
 ## Input S21 parameters
 fstop = 6  # GHz
@@ -300,6 +301,16 @@ while running:
             else:
                 color_cycler += 1
                 linecolor = colors[color_cycler % nr_colors]
+        if event.key == pygame.K_b:
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
+            if dark:
+                linecolor = current_linecolor
+                dark = 0
+            else:
+                current_linecolor = linecolor
+                linecolor = black
+                dark = 1
         if event.key == pygame.K_RETURN:
                 if dx != 1:
                     print('Putting dX to 1')
@@ -318,19 +329,15 @@ while running:
                 s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
                 
                 ## Make dark scan and save it
-                current_color_cycler = copy(color_cycler)
-                cycles2dark = nr_colors - current_color_cycler
-                for i in range(cycles2dark):
-                    device.shell("input keyevent KEYCODE_G")
-                    pygame.time.wait(500)
-                # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
                 dark_s21 = np.zeros((len_s21))
                 name = 'S21s/S21dark_'+ timestamp() + '.npy'
                 np.save(name, dark_s21)
                 print('Saved: %s' % name)
-                for i in range(current_color_cycler):
-                    device.shell("input keyevent KEYCODE_G")
-                    pygame.time.wait(500)
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
                 measure = 1
     pygame.display.flip()
 pygame.quit()
