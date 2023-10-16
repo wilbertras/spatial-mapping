@@ -65,6 +65,8 @@ def connect2vi(VISA, timeout=300000):
     return vi
 
 def init_vna(vna):
+    vna.write(f'SYST:PRES')
+    vna.write(f'DISP:WIND:TRAC1:DEL;')
     vna.write('OUTP ON')
     # vna.write('MMEMORY:LOAD "D:\KIDS\KIDs.csa";')
     vna.query(f'*OPC?')
@@ -76,7 +78,7 @@ def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
 
     # Set sweep params
     session = 'Scan%d' % id
-    # vna.write(f'DISP:WIND:TRAC1:DEL;')
+    
     vna.write(f'DISP:WIND:TRAC1:FEED "{session}";')
     vna.write(f'DISP:WIND:TRAC1:Y:AUTO')
     vna.write(f'CALC1:PAR:DEF "{session}", S21;')
@@ -91,6 +93,7 @@ def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
     print('VNA power = %.2f' % power)
     vna.write('FORM:DATA ASCII;')
     # Trigger a single sweep
+    vna.write(f'TRIG:SCOP CURR;')
     vna.write(f'INIT:IMM;')
     # Wait for the measurement to complete (you may need to adjust the wait time)
     try:
@@ -122,6 +125,6 @@ def plot_s21(freqs, s21):
 
 
 
-# # run
-# freqs, s21 = get_s21(4, 5, 0.5, 3201, -110, 1000)
-# plot_s21(freqs, s21)
+# run
+freqs, s21 = get_s21(4, 5, 0.1, 101, -110, 1000)
+plot_s21(freqs, s21)

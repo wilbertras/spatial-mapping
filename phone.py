@@ -289,10 +289,12 @@ while running:
                 bgcolor = black
                 linecolor = white
                 inverted = 0
+                color_cycler = 0
             else:
                 bgcolor = white
                 linecolor = black
                 inverted = 1
+                color_cycler = 0
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
             pygame.time.wait(wait)
