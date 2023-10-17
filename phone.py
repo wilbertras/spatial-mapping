@@ -170,8 +170,8 @@ while running:
     if measure:
         if nr_x_scanned < nr_x_scans:
             plt.close()
-            s21 = np.zeros((1, 1, len_s21))
-            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # s21 = np.zeros((1, 1, len_s21))
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_x_scans:
@@ -314,6 +314,11 @@ while running:
                 linecolor = black
                 dark = 1
         if event.key == pygame.K_RETURN:
+                if inverted:
+                    print('Putting inverted screen back to normal')
+                    device.shell("input keyevent KEYCODE_I")
+                    pygame.time.wait(wait)
+                    inverted = 0
                 if dx != 1:
                     print('Putting dX to 1')
                     device.shell("input keyevent KEYCODE_X")

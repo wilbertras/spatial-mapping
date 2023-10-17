@@ -2,7 +2,7 @@ import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
-
+import time
 
 def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
     bfout, bfin, rfout = power_calibration()
@@ -13,7 +13,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
     realfstop = fstart + num_subscans * subscanbw
     f0start = realfstart + subscanbw / 2
     freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
-    s21 = []
+    scans = []
     # Connect with VI's
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
@@ -37,8 +37,8 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
         KID_cryoIn = bfin(f0)
         vna_power = kidpower - KID_cryoIn
         subscan = vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, i)
-        s21.append(subscan)
-    s21 = np.array(s21).flatten()
+        scans.append(subscan)
+    s21 = np.array(scans).flatten()
     print('S21 completed')
     vna.close()
     weinschell.close()
@@ -66,44 +66,48 @@ def connect2vi(VISA, timeout=300000):
 
 def init_vna(vna):
     vna.write(f'SYST:PRES')
-    vna.write(f'DISP:WIND:TRAC1:DEL;')
+    vna.write(f'CONT:AUX:OUTP2:VOLT 0')
+    vna.write(f'CONT:AUX:OUTP1:VOLT 5')
+    
     vna.write('OUTP ON')
     # vna.write('MMEMORY:LOAD "D:\KIDS\KIDs.csa";')
     vna.query(f'*OPC?')
     vna.write('SENS1:SWE:TRIG:POIN OFF;')
-    vna.write('TRIG:SCOP curr;')
+    vna.write('TRIG:SCOP CURR;')
     vna.write('INIT1:CONT ON;')
 
 def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
 
     # Set sweep params
     session = 'Scan%d' % id
-    
-    vna.write(f'DISP:WIND:TRAC1:FEED "{session}";')
-    vna.write(f'DISP:WIND:TRAC1:Y:AUTO')
+    vna.write(f'DISP:WIND:TRAC1:DEL;')
     vna.write(f'CALC1:PAR:DEF "{session}", S21;')
     vna.write(f'CALC1:PAR:SEL "{session}";')
+    vna.write(f'DISP:WIND:TRAC1:FEED "{session}";')  
+    vna.write(f'DISP:WIND:TRAC1:Y:AUTO')
     vna.write(f'SENS1:FREQ:CENT {f0}GHz;')
     vna.write(f'SENS1:FREQ:SPAN {subscanbw}GHz;')
+    vna.write(f'SOUR1:POW1:LEV {vna_power};')
     vna.write(f'SENS1:BWID {ifbw}Hz;')
     vna.write(f'SENS1:SWE:POIN {num_points};') 
-    vna.write(f'SENS1:PAR:S21:FORM MLOG;')
-    vna.write(f'SOUR1:POW1:LEV {vna_power};')
+    vna.write(f'MMEM:STOR:TRAC:FORM:SNP DB;')
+    vna.write('FORM:DATA ASCII;')
+    vna.write(f'sens1:swe:trig:poin off;')
+    vna.write(f'sens1:swe:time:auto on;')          
+    vna.write(f'TRIG:SOUR MAN;')
+    vna.write(f'INIT:CONT OFF;')
     power = float(vna.query(f'SOUR1:POW1:LEV?'))
     print('VNA power = %.2f' % power)
-    vna.write('FORM:DATA ASCII;')
+    
     # Trigger a single sweep
     vna.write(f'TRIG:SCOP CURR;')
     vna.write(f'INIT:IMM;')
-    # Wait for the measurement to complete (you may need to adjust the wait time)
-    try:
+    if vna.query('*OPC?'):
         response = vna.query_ascii_values(f'CALC1:DATA? FDATA;')
         s21 = np.array(response)
         if vna.query(f'*OPC?'):
             print('Subscan %d complete' % (id))
-    except:
-        s21 = np.zeros(num_points)
-        print('No data gathered')
+        
     return s21
 
 
@@ -126,5 +130,9 @@ def plot_s21(freqs, s21):
 
 
 # run
-freqs, s21 = get_s21(4, 5, 0.1, 101, -110, 1000)
+st = time.time()
+freqs, s21 = get_s21(4, 6, 0.1, 6401, -110, 1000)
+et = time.time()
+elapsed_time = et - st
+print('Elapsed time = %d seconds' % elapsed_time)
 plot_s21(freqs, s21)
