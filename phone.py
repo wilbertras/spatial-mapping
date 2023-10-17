@@ -19,7 +19,7 @@ def timestamp():
     return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
 
 try:
-    os.startfile("scrcpy-win64-v211\scrcpy.exe")
+    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
 except:
     print('No phone connected')
@@ -130,16 +130,16 @@ dark = 0
 
 ## Input S21 parameters
 fstart = 4  # GHz
-fstop = 5  # GHz
+fstop = 6  # GHz
 totscanbw = fstop - fstart
-num_points = 3201
-subscanbw = 0.5  # GHz
+num_points = 6401
+subscanbw = 0.1  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -169,36 +169,32 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        if nr_x_scanned < nr_x_scans:
-            plt.close()
-            # s21 = np.zeros((1, 1, len_s21))
+        if nr_x_scanned < nr_scans:
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
-            if nr_x_scanned < nr_x_scans:
+            if nr_x_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                 pygame.time.wait(wait)
                 x += 1
-            fig, ax = plt.subplots()
-            ax.plot(s21[0, 0, :])
-            plt.draw()
-        if (nr_x_scanned == nr_x_scans) & (nr_y_scanned < nr_y_scans):
-            plt.close()
-            # s21 = np.zeros((1, 1, len_s21))
+        if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            s21s[0, nr_y_scanned, :] = s21
+            s21s[nr_y_scanned, 1, :] = s21
             nr_y_scanned += 1
-            if nr_y_scanned < nr_y_scans:
+            if nr_y_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_UP")
                 pygame.time.wait(wait)
                 y += 1
-            fig, ax = plt.subplots()
-            ax.plot(s21[0, 0, :])
-            plt.draw()
-        if nr_y_scanned == nr_y_scans:
+        if nr_y_scanned == nr_scans:
             measure = 0
             np.save(name, s21s)
             print('Saved: %s' % name)
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
     
     event = pygame.event.poll()
     if event.type == pygame.QUIT:
@@ -341,14 +337,14 @@ while running:
                     dy = 1
 
                 # Ask input on number of scans
-                nr_x_scans = int(input('Please input the number of scans in x: '))
-                nr_y_scans = int(input('Please input the number of scans in y: '))
+                nr_scans = int(input('Please input the number of scans in x and y: '))
                 
                 # Initiate array
                 dir = 'S21s/17-10-23/'
-                s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
+                s21s = np.zeros((nr_scans, 2, len_s21))
                 date = timestamp()
                 name = '%sS21_w%d_%s.npy' % (dir, w, date)
+                freqsname = '%sS21_w%d_%s_freqs.npy' % (dir, w, date)
                 darkname = '%sS21_w%d_%s_dark.npy' % (dir, w, date)
                 settingsname = '%sS21_w%d_%s_settings.txt' % (dir, w, date)
 
@@ -363,9 +359,11 @@ while running:
                 pygame.time.wait(wait)
                 freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
                 np.save(darkname, dark_s21)
+                np.save(freqsname, freqs)
                 print('Saved: %s' % darkname)
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
+                fig, ax = plt.subplots()
+                ax.plot(freqs, dark_s21)
+                plt.show()
                 measure = 1
     pygame.display.flip()
 pygame.quit()
