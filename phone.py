@@ -1,6 +1,5 @@
 from ppadb.client import Client as AdbClient
 import pygame
-import functions as f
 import numpy as np
 from datetime import datetime
 import os
@@ -19,7 +18,7 @@ def timestamp():
     return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
 
 try:
-    # os.startfile("scrcpy-win64-v211\scrcpy.exe")
+    os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
 except:
     print('No phone connected')
@@ -143,9 +142,6 @@ ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
-## Test connection to Virtual Intstruments
-vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -172,7 +168,7 @@ while running:
         if nr_x_scanned < nr_scans:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            s21 = np.zeros(freqs.shape)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
@@ -182,7 +178,7 @@ while running:
         if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            s21 = np.zeros(freqs.shape)
             s21s[nr_y_scanned, 1, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_scans:
@@ -357,7 +353,7 @@ while running:
                 # Make dark scan and save it
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                dark_s21 = s21 = np.zeros(freqs.shape)
                 np.save(darkname, dark_s21)
                 np.save(freqsname, freqs)
                 print('Saved: %s' % darkname)
