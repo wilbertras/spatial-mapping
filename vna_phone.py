@@ -139,7 +139,7 @@ realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -170,8 +170,9 @@ while running:
     
     if measure:
         if nr_x_scanned < nr_scans:
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
+            if nr_x_scanned == 0:
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
@@ -180,8 +181,9 @@ while running:
                 pygame.time.wait(wait)
                 x += 1
         if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
+            if nr_y_scanned == 0:
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_y_scanned, 1, :] = s21
             nr_y_scanned += 1
