@@ -47,6 +47,7 @@ color_cycler = 0
 width, height = 600, 500
 bgcolor = black
 linecolor = white
+axcolor = white
 column_width = width // 2
 small_box_height = height // 8
 big_box_height = height // 2
@@ -132,14 +133,14 @@ dark = 0
 fstart = 4  # GHz
 fstop = 6  # GHz
 totscanbw = fstop - fstart
-num_points = 6401
+num_points = 3201
 subscanbw = 0.1  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -309,17 +310,7 @@ while running:
         if event.key == pygame.K_b:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            if not inverted:
-                if dark:
-                    linecolor = current_linecolor
-                    axcolor = current_axcolor
-                    dark = 0
-                else:
-                    current_linecolor = copy(linecolor)
-                    current_axcolor = copy(axcolor)
-                    bgcolor = black
-                    linecolor = black
-                    dark = 1
+            dark = (dark + 1)%4
         if event.key == pygame.K_RETURN:
                 # Set screen and stepsizes to correct values
                 if inverted:
