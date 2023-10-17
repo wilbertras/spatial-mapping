@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import matplotlib.pyplot as plt
 import sys
+import json
 from copy import copy
 
 
@@ -128,23 +129,23 @@ wait = 50
 dark = 0
 
 ## Input S21 parameters
-fstop = 6  # GHz
 fstart = 4  # GHz
+fstop = 5  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
-subscanbw = 0.1  # GHz
+subscanbw = 0.5  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
 ## Test connection to Virtual Intstruments
-# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -171,7 +172,7 @@ while running:
         if nr_x_scanned < nr_x_scans:
             plt.close()
             # s21 = np.zeros((1, 1, len_s21))
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_x_scans:
@@ -183,8 +184,8 @@ while running:
             plt.draw()
         if (nr_x_scanned == nr_x_scans) & (nr_y_scanned < nr_y_scans):
             plt.close()
-            s21 = np.zeros((1, 1, len_s21))
-            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # s21 = np.zeros((1, 1, len_s21))
+            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[0, nr_y_scanned, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_y_scans:
@@ -196,7 +197,6 @@ while running:
             plt.draw()
         if nr_y_scanned == nr_y_scans:
             measure = 0
-            name = 'S21s/S21s_'+ timestamp() + '.npy'
             np.save(name, s21s)
             print('Saved: %s' % name)
     
@@ -285,35 +285,45 @@ while running:
         if event.key == pygame.K_i:
             device.shell("input keyevent KEYCODE_I")
             pygame.time.wait(wait)
+            if not dark:
+                current_linecolor = copy(linecolor)
+                current_bgcolor = copy(bgcolor)
+                bgcolor = current_linecolor
+                linecolor = current_bgcolor
+                axcolor = current_bgcolor
             if inverted:
-                bgcolor = black
-                linecolor = white
                 inverted = 0
-                color_cycler = 0
             else:
-                bgcolor = white
-                linecolor = black
                 inverted = 1
-                color_cycler = 0
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
-            pygame.time.wait(wait)
-            if inverted:
-                pass
-            else:
-                color_cycler += 1
-                linecolor = colors[color_cycler % nr_colors]
+            if not dark:
+                if inverted:
+                    color_cycler += 1
+                    bgcolor = colors[color_cycler % nr_colors]
+                    linecolor = black
+                    axcolor = linecolor
+                else:
+                    color_cycler += 1
+                    bgcolor = black
+                    linecolor = colors[color_cycler % nr_colors]
+                    axcolor = linecolor
         if event.key == pygame.K_b:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            if dark:
-                linecolor = current_linecolor
-                dark = 0
-            else:
-                current_linecolor = linecolor
-                linecolor = black
-                dark = 1
+            if not inverted:
+                if dark:
+                    linecolor = current_linecolor
+                    axcolor = current_axcolor
+                    dark = 0
+                else:
+                    current_linecolor = copy(linecolor)
+                    current_axcolor = copy(axcolor)
+                    bgcolor = black
+                    linecolor = black
+                    dark = 1
         if event.key == pygame.K_RETURN:
+                # Set screen and stepsizes to correct values
                 if inverted:
                     print('Putting inverted screen back to normal')
                     device.shell("input keyevent KEYCODE_I")
@@ -330,19 +340,30 @@ while running:
                     pygame.time.wait(wait)
                     dy = 1
 
+                # Ask input on number of scans
                 nr_x_scans = int(input('Please input the number of scans in x: '))
                 nr_y_scans = int(input('Please input the number of scans in y: '))
                 
+                # Initiate array
+                dir = 'S21s/17-10-23/'
                 s21s = np.zeros((nr_x_scans, nr_y_scans, len_s21))
-                
-                ## Make dark scan and save it
+                date = timestamp()
+                name = '%sS21_w%d_%s.npy' % (dir, w, date)
+                darkname = '%sS21_w%d_%s_dark.npy' % (dir, w, date)
+                settingsname = '%sS21_w%d_%s_settings.txt' % (dir, w, date)
+
+                dict = {'color':colors[color_cycler % nr_colors], 
+                        'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                        'kidpower':kidpower, 'ifbw':ifbw}
+                with open(settingsname, 'w') as file:
+                    json.dump(dict, file)
+
+                # Make dark scan and save it
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
                 freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                dark_s21 = np.zeros((len_s21))
-                name = 'S21s/S21dark_'+ timestamp() + '.npy'
-                np.save(name, dark_s21)
-                print('Saved: %s' % name)
+                np.save(darkname, dark_s21)
+                print('Saved: %s' % darkname)
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
                 measure = 1
