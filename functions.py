@@ -131,7 +131,7 @@ def plot_s21(freqs, s21):
 
 # run
 # st = time.time()
-# freqs, s21 = get_s21(4, 6, 0.1, 6401, -110, 1000)
+# freqs, s21 = get_s21(4, 6, 0.1, 3201, -110, 1000)
 # et = time.time()
 # elapsed_time = et - st
 # print('Elapsed time = %d seconds' % elapsed_time)
