@@ -128,6 +128,9 @@ nr_y_scans = 0
 measure = 0
 wait = 50
 dark = 0
+square = 0
+scanline = False
+scancolor = 0
 
 ## Input S21 parameters
 fstart = 4  # GHz
@@ -199,7 +202,72 @@ while running:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
     
+
+    if scanline:
+        dir = 'S21s/18-10-23/'
+        date = timestamp()
+        if linecolor == (0, 0, 0):
+            color = 'black'
+        elif linecolor == (255, 0, 0):
+            color = 'red'
+        elif linecolor == (0, 255, 0):
+            color = 'green'
+        elif linecolor == (0, 0, 255):
+            color = 'blue'
+        elif linecolor == (255, 255, 255):
+            color = 'white'
+
+        for i in range(5):
+            name = '%sS21_w%d_%s_%s.npy' % (dir, w, color, date)
+            freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
+            settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
+            dict = {'color':colors[color_cycler % nr_colors], 
+                    'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                    'kidpower':kidpower, 'ifbw':ifbw}
+            with open(settingsname, 'w') as file:
+                json.dump(dict, file)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            device.shell("input keyevent KEYCODE_E")
+            pygame.time.wait(wait)
+            w += step
+            np.save(name, s21)
+        np.save(freqsname, freqs)
+        scanline = False
+
+    if scancolor:
+        dir = 'S21s/18-10-23/'
+        date = timestamp()
+
+        for i in range(5):
+            if linecolor == (0, 0, 0):
+                color = 'black'
+            elif linecolor == (255, 0, 0):
+                color = 'red'
+            elif linecolor == (0, 255, 0):
+                color = 'green'
+            elif linecolor == (0, 0, 255):
+                color = 'blue'
+            elif linecolor == (255, 255, 255):
+                color = 'white'
+            name = '%sS21_w%d_%s_%s.npy' % (dir, w, color, date)
+            freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
+            settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
+            dict = {'color':colors[color_cycler % nr_colors], 
+                    'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                    'kidpower':kidpower, 'ifbw':ifbw}
+            with open(settingsname, 'w') as file:
+                json.dump(dict, file)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            device.shell("input keyevent KEYCODE_E")
+            pygame.time.wait(wait)
+            w += step
+            np.save(name, s21)
+        np.save(freqsname, freqs)
+        scanline = False
+
+
     event = pygame.event.poll()
+
     if event.type == pygame.QUIT:
         running = 0 
 
@@ -214,7 +282,15 @@ while running:
             w = w_init
             dx = w_init
             dy = w_init
+            bgcolor = black
+            linecolor = white
+            axcolor = white
             nr_s21 = 0
+            color_cycler = 0
+            dark = 0
+            inverted = 0
+            square = 0
+
         if event.key == pygame.K_DOWN:
             device.shell("input keyevent KEYCODE_DPAD_DOWN")
             pygame.time.wait(wait)
@@ -282,21 +358,19 @@ while running:
             pygame.time.wait(wait)
             w = 1
         if event.key == pygame.K_i:
-            device.shell("input keyevent KEYCODE_I")
-            pygame.time.wait(wait)
             if not dark:
+                device.shell("input keyevent KEYCODE_I")
+                pygame.time.wait(wait)
                 current_linecolor = copy(linecolor)
                 current_bgcolor = copy(bgcolor)
                 bgcolor = current_linecolor
                 linecolor = current_bgcolor
                 axcolor = current_bgcolor
-            if inverted:
-                inverted = 0
-            else:
-                inverted = 1
+                inverted = (inverted + 1) % 2
         if event.key == pygame.K_g:
-            device.shell("input keyevent KEYCODE_G")
-            if not dark:
+            if dark == 0:
+                device.shell("input keyevent KEYCODE_G")
+                pygame.wait(wait)
                 if inverted:
                     color_cycler += 1
                     bgcolor = colors[color_cycler % nr_colors]
@@ -308,9 +382,17 @@ while running:
                     linecolor = colors[color_cycler % nr_colors]
                     axcolor = linecolor
         if event.key == pygame.K_b:
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
-            dark = (dark + 1)%4
+            if (not inverted) & (not square):
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+                dark = (dark + 1)%4
+        if event.key == pygame.K_s:
+            if not inverted:
+                device.shell("input keyevent KEYCODE_S")
+                pygame.time.wait(wait)
+                square = (square + 1) % 2
+        if event.key == pygame.K_m:
+            scanline = True
         if event.key == pygame.K_RETURN:
                 # Set screen and stepsizes to correct values
                 if inverted:
@@ -328,36 +410,42 @@ while running:
                     device.shell("input keyevent KEYCODE_Y")
                     pygame.time.wait(wait)
                     dy = 1
-
-                # Ask input on number of scans
-                nr_scans = int(input('Please input the number of scans in x and y: '))
                 
-                # Initiate array
-                dir = 'S21s/17-10-23/'
-                s21s = np.zeros((nr_scans, 2, len_s21))
-                date = timestamp()
-                name = '%sS21_w%d_%s.npy' % (dir, w, date)
-                freqsname = '%sS21_w%d_%s_freqs.npy' % (dir, w, date)
-                darkname = '%sS21_w%d_%s_dark.npy' % (dir, w, date)
-                settingsname = '%sS21_w%d_%s_settings.txt' % (dir, w, date)
+                w_okay = input('The linewidth is now %d, is that correct? (Y/N):' % (w))
 
-                dict = {'color':colors[color_cycler % nr_colors], 
-                        'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                        'kidpower':kidpower, 'ifbw':ifbw}
-                with open(settingsname, 'w') as file:
-                    json.dump(dict, file)
+                if w_okay:
+                    # Ask input on number of scans
+                    nr_scans = int(input('Please input the number of scans in x and y: '))
+                    
+                    # Initiate array
+                    dir = 'S21s/18-10-23/'
+                    s21s = np.zeros((nr_scans, 2, len_s21))
+                    date = timestamp()
 
-                # Make dark scan and save it
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
-                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                np.save(darkname, dark_s21)
-                np.save(freqsname, freqs)
-                print('Saved: %s' % darkname)
-                fig, ax = plt.subplots()
-                ax.plot(freqs, dark_s21)
-                plt.show()
-                measure = 1
+                    name = '%sS21_w%d_%s.npy' % (dir, w, date)
+                    freqsname = '%sS21_w%d_%s_freqs.npy' % (dir, w, date)
+                    darkname = '%sS21_w%d_%s_dark.npy' % (dir, w, date)
+                    settingsname = '%sS21_w%d_%s_settings.txt' % (dir, w, date)
+
+                    dict = {'color':colors[color_cycler % nr_colors], 
+                            'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                            'kidpower':kidpower, 'ifbw':ifbw}
+                    with open(settingsname, 'w') as file:
+                        json.dump(dict, file)
+
+                    # Make dark scan and save it
+                    device.shell("input keyevent KEYCODE_B")
+                    pygame.time.wait(wait)
+                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                    np.save(darkname, dark_s21)
+                    np.save(freqsname, freqs)
+                    print('Saved: %s' % darkname)
+                    fig, ax = plt.subplots()
+                    ax.plot(freqs, dark_s21)
+                    plt.show()
+                    measure = 1
+                else:
+                    pass
     pygame.display.flip()
 pygame.quit()
 sys.exit()
