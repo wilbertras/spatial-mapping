@@ -1,6 +1,6 @@
 from ppadb.client import Client as AdbClient
 import pygame
-# import functions as f
+import functions as f
 import numpy as np
 from datetime import datetime
 import os
@@ -136,7 +136,7 @@ scancolor = 0
 fstart = 4  # GHz
 fstop = 6  # GHz
 totscanbw = fstop - fstart
-num_points = 3201
+num_points = 6401
 subscanbw = 0.1  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
@@ -148,8 +148,8 @@ freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
 # ## Test connection to Virtual Intstruments
-# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -177,7 +177,7 @@ while running:
             if nr_x_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-            # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
@@ -188,7 +188,7 @@ while running:
             if nr_y_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-            # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_y_scanned, 1, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_scans:
@@ -211,8 +211,8 @@ while running:
         for i in range(3):
             device.shell("input keyevent KEYCODE_I")
             pygame.time.wait(wait)
-            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            s21 = np.zeros(10)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # s21 = np.zeros(10)
             color = 'black'
             name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
             np.save(name, s21)
@@ -220,8 +220,8 @@ while running:
             pygame.time.wait(wait)
 
             for color in colornames:
-                # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                s21 = np.zeros(10)
+                _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                # s21 = np.zeros(10)
                 name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
                 np.save(name, s21)
                 device.shell("input keyevent KEYCODE_G")
