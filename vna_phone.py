@@ -342,7 +342,7 @@ while running:
             inverted = (inverted + 1) % 2
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
-            pygame.wait(wait)
+            pygame.time.wait(wait)
             if inverted:
                 color_cycler += 1
                 bgcolor = colors[color_cycler % nr_colors]
