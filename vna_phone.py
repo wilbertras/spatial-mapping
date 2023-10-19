@@ -1,6 +1,6 @@
 from ppadb.client import Client as AdbClient
 import pygame
-import functions as f
+# import functions as f
 import numpy as np
 from datetime import datetime
 import os
@@ -147,9 +147,9 @@ ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
-## Test connection to Virtual Intstruments
-vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+# ## Test connection to Virtual Intstruments
+# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -177,7 +177,7 @@ while running:
             if nr_x_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_x_scanned, 0, :] = s21
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
@@ -188,7 +188,7 @@ while running:
             if nr_y_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             s21s[nr_y_scanned, 1, :] = s21
             nr_y_scanned += 1
             if nr_y_scanned < nr_scans:
@@ -204,65 +204,39 @@ while running:
     
 
     if scanline:
-        dir = 'S21s/18-10-23/'
+        dir = 'S21s/19-10-23/'
         date = timestamp()
-        if linecolor == (0, 0, 0):
+        colornames = ['white', 'blue', 'green', 'red']
+
+        for i in range(3):
+            device.shell("input keyevent KEYCODE_I")
+            pygame.time.wait(wait)
+            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            s21 = np.zeros(10)
             color = 'black'
-        elif linecolor == (255, 0, 0):
-            color = 'red'
-        elif linecolor == (0, 255, 0):
-            color = 'green'
-        elif linecolor == (0, 0, 255):
-            color = 'blue'
-        elif linecolor == (255, 255, 255):
-            color = 'white'
+            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
+            np.save(name, s21)
+            device.shell("input keyevent KEYCODE_I")
+            pygame.time.wait(wait)
 
-        for i in range(5):
-            name = '%sS21_w%d_%s_%s.npy' % (dir, w, color, date)
-            freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
-            settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
-            dict = {'color':colors[color_cycler % nr_colors], 
-                    'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                    'kidpower':kidpower, 'ifbw':ifbw}
-            with open(settingsname, 'w') as file:
-                json.dump(dict, file)
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            for color in colornames:
+                # _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                s21 = np.zeros(10)
+                name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
+                np.save(name, s21)
+                device.shell("input keyevent KEYCODE_G")
+                pygame.time.wait(wait)
             device.shell("input keyevent KEYCODE_E")
             pygame.time.wait(wait)
-            w += step
-            np.save(name, s21)
-        np.save(freqsname, freqs)
-        scanline = False
-
-    if scancolor:
-        dir = 'S21s/18-10-23/'
-        date = timestamp()
-
-        for i in range(5):
-            if linecolor == (0, 0, 0):
-                color = 'black'
-            elif linecolor == (255, 0, 0):
-                color = 'red'
-            elif linecolor == (0, 255, 0):
-                color = 'green'
-            elif linecolor == (0, 0, 255):
-                color = 'blue'
-            elif linecolor == (255, 255, 255):
-                color = 'white'
-            name = '%sS21_w%d_%s_%s.npy' % (dir, w, color, date)
-            freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
-            settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
-            dict = {'color':colors[color_cycler % nr_colors], 
-                    'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                    'kidpower':kidpower, 'ifbw':ifbw}
-            with open(settingsname, 'w') as file:
-                json.dump(dict, file)
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            device.shell("input keyevent KEYCODE_E")
-            pygame.time.wait(wait)
-            w += step
-            np.save(name, s21)
-        np.save(freqsname, freqs)
+            w += step  
+        freqsname = '%sS21_x%dy%d_%s_freqs.npy' % (dir, x, y, date) 
+        np.save(freqsname, freqs)           
+        settingsname = '%sS21_x%dy%d_%s_settings.txt' % (dir, x, y, date)
+        dict = {'color':colors[color_cycler % nr_colors], 
+                'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                'kidpower':kidpower, 'ifbw':ifbw}
+        with open(settingsname, 'w') as file:
+            json.dump(dict, file)
         scanline = False
 
 
@@ -358,39 +332,36 @@ while running:
             pygame.time.wait(wait)
             w = 1
         if event.key == pygame.K_i:
-            if not dark:
-                device.shell("input keyevent KEYCODE_I")
-                pygame.time.wait(wait)
-                current_linecolor = copy(linecolor)
-                current_bgcolor = copy(bgcolor)
-                bgcolor = current_linecolor
-                linecolor = current_bgcolor
-                axcolor = current_bgcolor
-                inverted = (inverted + 1) % 2
+            device.shell("input keyevent KEYCODE_I")
+            pygame.time.wait(wait)
+            current_linecolor = copy(linecolor)
+            current_bgcolor = copy(bgcolor)
+            bgcolor = current_linecolor
+            linecolor = current_bgcolor
+            axcolor = current_bgcolor
+            inverted = (inverted + 1) % 2
         if event.key == pygame.K_g:
-            if dark == 0:
-                device.shell("input keyevent KEYCODE_G")
-                pygame.wait(wait)
-                if inverted:
-                    color_cycler += 1
-                    bgcolor = colors[color_cycler % nr_colors]
-                    linecolor = black
-                    axcolor = linecolor
-                else:
-                    color_cycler += 1
-                    bgcolor = black
-                    linecolor = colors[color_cycler % nr_colors]
-                    axcolor = linecolor
+            device.shell("input keyevent KEYCODE_G")
+            pygame.wait(wait)
+            if inverted:
+                color_cycler += 1
+                bgcolor = colors[color_cycler % nr_colors]
+                linecolor = black
+                axcolor = linecolor
+            else:
+                color_cycler += 1
+                bgcolor = black
+                linecolor = colors[color_cycler % nr_colors]
+                axcolor = linecolor
         if event.key == pygame.K_b:
-            if (not inverted) & (not square):
+            if not square:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
                 dark = (dark + 1)%4
         if event.key == pygame.K_s:
-            if not inverted:
-                device.shell("input keyevent KEYCODE_S")
-                pygame.time.wait(wait)
-                square = (square + 1) % 2
+            device.shell("input keyevent KEYCODE_S")
+            pygame.time.wait(wait)
+            square = (square + 1) % 2
         if event.key == pygame.K_m:
             scanline = True
         if event.key == pygame.K_RETURN:
