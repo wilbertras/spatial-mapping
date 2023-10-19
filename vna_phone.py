@@ -178,7 +178,8 @@ while running:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            s21s[nr_x_scanned, 0, :] = s21
+            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
+            np.save(name, s21)
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
@@ -189,7 +190,8 @@ while running:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            s21s[nr_y_scanned, 1, :] = s21
+            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, 0, nr_y_scanned+1, w, color, date)
+            np.save(name, s21)
             nr_y_scanned += 1
             if nr_y_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_UP")
@@ -197,8 +199,7 @@ while running:
                 y += 1
         if nr_y_scanned == nr_scans:
             measure = 0
-            np.save(name, s21s)
-            print('Saved: %s' % name)
+            print('Helemaal f*cking klaar met de meting')
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
     
@@ -389,16 +390,13 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'S21s/18-10-23/'
-                    s21s = np.zeros((nr_scans, 2, len_s21))
+                    dir = 'S21s/19-10-23_w1_blue/'
                     date = timestamp()
-
-                    name = '%sS21_w%d_%s.npy' % (dir, w, date)
-                    freqsname = '%sS21_w%d_%s_freqs.npy' % (dir, w, date)
-                    darkname = '%sS21_w%d_%s_dark.npy' % (dir, w, date)
-                    settingsname = '%sS21_w%d_%s_settings.txt' % (dir, w, date)
-
-                    dict = {'color':colors[color_cycler % nr_colors], 
+                    color = 'blue'
+                    freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
+                    darkname = '%sS21_w%d_%s_%s_dark.npy' % (dir, w, color, date)
+                    settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
+                    dict = {'color':colors[color_cycler % nr_colors], 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
                             'kidpower':kidpower, 'ifbw':ifbw}
                     with open(settingsname, 'w') as file:
