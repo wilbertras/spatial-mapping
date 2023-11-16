@@ -398,7 +398,7 @@ while running:
                     settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
                     dict = {'color':colors[color_cycler % nr_colors], 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                            'kidpower':kidpower, 'ifbw':ifbw}
+                            'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
                     with open(settingsname, 'w') as file:
                         json.dump(dict, file)
 
