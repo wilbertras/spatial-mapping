@@ -398,7 +398,7 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'S21s/30-05-24_wx_x/'
+                    dir = 'S21s/LT343/31-05-24_mapping_20x20/'
                     date = timestamp()
                     color = 'blue'
                     freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
