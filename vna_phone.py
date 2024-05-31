@@ -133,10 +133,10 @@ scanline = False
 scancolor = 0
 
 ## Input S21 parameters
-fstart = 4  # GHz
-fstop = 6  # GHz
+fstart = 5.5  # GHz
+fstop = 8  # GHz
 totscanbw = fstop - fstart
-num_points = 6401
+num_points = 3201
 subscanbw = 0.1  # GHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
@@ -205,20 +205,28 @@ while running:
     
 
     if scanline:
-        dir = 'S21s/19-10-23/'
+        dir = 'S21s/31-05-24/'
         date = timestamp()
-        colornames = ['white', 'blue', 'green', 'red']
-
+        colornames = ['blue']
+        device.shell("input keyevent KEYCODE_B")
+        pygame.time.wait(wait)
+        _, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+        name = '%sS21_dark_%s.npy' % (dir, date)
+        np.save(name, dark_s21)
         for i in range(3):
-            device.shell("input keyevent KEYCODE_I")
+            device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            # s21 = np.zeros(10)
-            color = 'black'
-            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
-            np.save(name, s21)
-            device.shell("input keyevent KEYCODE_I")
-            pygame.time.wait(wait)
+
+        for i in range(5):
+            # device.shell("input keyevent KEYCODE_I")
+            # pygame.time.wait(wait)
+            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # # s21 = np.zeros(10)
+            # color = 'black'
+            # name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
+            # np.save(name, s21)
+            # device.shell("input keyevent KEYCODE_I")
+            # pygame.time.wait(wait)
 
             for color in colornames:
                 _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
@@ -358,7 +366,7 @@ while running:
             if not square:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                dark = (dark + 1)%4
+                dark = (dark + 1) % 4
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             pygame.time.wait(wait)
@@ -390,7 +398,7 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'S21s/19-10-23_w1_blue/'
+                    dir = 'S21s/30-05-24_wx_x/'
                     date = timestamp()
                     color = 'blue'
                     freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
