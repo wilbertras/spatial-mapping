@@ -205,7 +205,7 @@ while running:
     
 
     if scanline:
-        dir = 'S21s/31-05-24/'
+        dir = 'S21s/'
         date = timestamp()
         colornames = ['blue']
         device.shell("input keyevent KEYCODE_B")
@@ -398,7 +398,7 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'S21s/LT343/31-05-24_mapping_20x20/'
+                    dir = 'S21s/LT343chip9/mapping_6x6/'
                     date = timestamp()
                     color = 'blue'
                     freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
