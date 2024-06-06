@@ -128,13 +128,3 @@ def plot_s21(freqs, s21):
     plt.show()
 
 
-
-# run
-# st = time.time()
-# freqs, s21 = get_s21(8.7445, 8.7455, 0.001, 201, -110, 1000)
-# # np.save('VNAsweep_freqs_5-9GHz', freqs)
-# # np.save('VNAsweep_s21_5-9GHz', s21)
-# et = time.time()
-# elapsed_time = et - st
-# print('Elapsed time = %d seconds' % elapsed_time)
-# plot_s21(freqs, s21)
