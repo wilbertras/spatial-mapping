@@ -2,11 +2,11 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 5          # GHz
-    fstop = 5.1           # GHz
-    scanbw = 100        # MHz
+    fstart = 5.5          # GHz
+    fstop = 8           # GHz
+    scanbw = 50        # MHz
     nr_points = 6401
-    power = -110        # dBm
+    power = -112        # dBm
     ifbw = 1000         # Hz
 
     st = time.time()
@@ -15,7 +15,6 @@ if __name__ == "__main__":
     elapsed_time = et - st
     print('Elapsed time = %d seconds' % elapsed_time)
 
-    file_path = save_numpy_array(np.stack((freqs, s21), axis=-1).T)
-
     fig = plot_s21(freqs, s21)
+    file_path = save_numpy_array(np.stack((freqs, s21), axis=-1).T)
     fig.savefig(file_path.split('.')[0] + '.png')
