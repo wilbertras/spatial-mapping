@@ -1,0 +1,12 @@
+04-06-2024 LT343chip9, 6x6 array
+
+Measurement of the f-scatter due to setup effects
+
+Measurement:
+- 1st cooldown, did VNA calibration at 500 mK. Made VNA scan in Labview at 100mK from 5.5-6.5, 6.5-7.5 and 7.5-8GHz with 50 MHz scans, 6401 points, 1000 Hz IFbw, P=-112dBm. I had to do in in part because it could'nt do it in one go, for an unkown reason. I have converted this data to a single numpy array. 
+Warmed up to T1=250K, T2=192K, T5=175K
+- 2nd cooldown, used same VNA calibartion as before. Made VNA scan in Python in a single scan with same settings. There is a small offset in power between the scan of the Labview and Python scripts. This shouldn't matter for the f-scatter.
+Warmed up to T1=93,4K, T2=24,5K, T5=21,8K
+- 3rd cooldown, used same VNA calibartion as before. Made VNA scan with in Python same settings.
+Warmed up to T1=99.1K, T2=31.5K, T5=29.7K, T6=26.4K. 
+- 4th cooldown, used same VNA calibartion as before. Made VNA scan in Python with same settings. All f0s seem to have shifted to lower frequencies now.
