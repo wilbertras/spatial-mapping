@@ -2,11 +2,13 @@ import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
-import time
+import tkinter as tk
+from tkinter import filedialog
+
 
 def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
     bfout, bfin, rfout = power_calibration()
-
+    subscanbw *= 1e-3
     totscanbw = fstop - fstart
     num_subscans = int(np.ceil(totscanbw / subscanbw))
     realfstart = fstart
@@ -126,15 +128,35 @@ def plot_s21(freqs, s21):
     ax.set_title('S21 from VNA')
     ax.grid(which='Major')
     plt.show()
+    return fig
 
 
+def save_numpy_array(arr):
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
 
-# run
-# st = time.time()
-# freqs, s21 = get_s21(8.7445, 8.7455, 0.001, 201, -110, 1000)
-# # np.save('VNAsweep_freqs_5-9GHz', freqs)
-# # np.save('VNAsweep_s21_5-9GHz', s21)
-# et = time.time()
-# elapsed_time = et - st
-# print('Elapsed time = %d seconds' % elapsed_time)
-# plot_s21(freqs, s21)
+    # Open file dialog to select the directory and file name
+    file_path = filedialog.asksaveasfilename(defaultextension=".npy", 
+                                             filetypes=[("NumPy Files", "*.npy"), ("All Files", "*.*")])
+    if file_path:
+        # Save the NumPy array to the selected file
+        np.save(file_path, arr)
+        print(f"Array saved to {file_path}")
+    else:
+        print("Save operation cancelled")
+    return file_path
+
+
+def save_fig(fig):
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+
+    # Open file dialog to select the directory and file name
+    file_path = filedialog.asksaveasfilename(defaultextension=".png", 
+                                             filetypes=[("PNG Files", "*.png"), ("All Files", "*.*")])
+    if file_path:
+        # Save the Matplotlib figure to the selected file
+        fig.savefig(file_path)
+        print(f"Figure saved to {file_path}")
+    else:
+        print("Save operation cancelled")
