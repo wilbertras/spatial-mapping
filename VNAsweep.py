@@ -2,12 +2,12 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 5.5          # GHz
-    fstop = 8           # GHz
-    scanbw = 50        # MHz
-    nr_points = 6401
+    fstart = 4.9         # GHz
+    fstop = 7.1           # GHz
+    scanbw = 100        # MHz
+    nr_points = 3201
     power = -112        # dBm
-    ifbw = 1000         # Hz
+    ifbw = 500         # Hz
 
     st = time.time()
     freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw)

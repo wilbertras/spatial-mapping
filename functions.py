@@ -39,6 +39,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
         KID_cryoIn = bfin(f0)
         vna_power = kidpower - KID_cryoIn
         subscan = vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, i)
+        print('Subscan %d/%d complete' % (i+1, num_subscans))
         scans.append(subscan)
     s21 = np.array(scans).flatten()
     print('S21 completed')
@@ -108,7 +109,8 @@ def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
         response = vna.query_ascii_values(f'CALC1:DATA? FDATA;')
         s21 = np.array(response)
         if vna.query(f'*OPC?'):
-            print('Subscan %d complete' % (id))
+            # print('Subscan %d complete' % (id))
+            pass
         
     return s21
 

@@ -133,11 +133,11 @@ scanline = False
 scancolor = 0
 
 ## Input S21 parameters
-fstart = 5.5  # GHz
-fstop = 8  # GHz
+fstart = 4.9  # GHz
+fstop = 7.1  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
-subscanbw = 0.1  # GHz
+subscanbw = 100  # MHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
@@ -173,20 +173,22 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        if nr_x_scanned < nr_scans:
-            if nr_x_scanned == 0:
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
-            np.save(name, s21)
-            nr_x_scanned += 1
-            if nr_x_scanned < nr_scans:
-                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-                pygame.time.wait(wait)
-                x += 1
-        if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
+        # if nr_x_scanned < nr_scans:
+        #     if nr_x_scanned == 0:
+        #         device.shell("input keyevent KEYCODE_B")
+        #         pygame.time.wait(wait)
+        #     _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+        #     name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
+        #     np.save(name, s21)
+        #     nr_x_scanned += 1
+        #     if nr_x_scanned < nr_scans:
+        #         device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+        #         pygame.time.wait(wait)
+        #         x += 1
+        # if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
+        if (nr_y_scanned < nr_scans):
             if nr_y_scanned == 0:
+                device.shell("input keyevent KEYCODE_B")
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
@@ -205,7 +207,7 @@ while running:
     
 
     if scanline:
-        dir = 'S21s/'
+        dir = 'Mappings/LT343chip2/test/'
         date = timestamp()
         colornames = ['blue']
         device.shell("input keyevent KEYCODE_B")
@@ -217,7 +219,7 @@ while running:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
 
-        for i in range(5):
+        for i in range(3):
             # device.shell("input keyevent KEYCODE_I")
             # pygame.time.wait(wait)
             # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
@@ -398,7 +400,7 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'S21s/LT343chip9/mapping_6x6/'
+                    dir = 'Mappings/LT343chip2/'
                     date = timestamp()
                     color = 'blue'
                     freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
