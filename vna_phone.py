@@ -173,22 +173,20 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        # if nr_x_scanned < nr_scans:
-        #     if nr_x_scanned == 0:
-        #         device.shell("input keyevent KEYCODE_B")
-        #         pygame.time.wait(wait)
-        #     _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-        #     name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
-        #     np.save(name, s21)
-        #     nr_x_scanned += 1
-        #     if nr_x_scanned < nr_scans:
-        #         device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-        #         pygame.time.wait(wait)
-        #         x += 1
-        # if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
-        if (nr_y_scanned < nr_scans):
-            if nr_y_scanned == 0:
+        if nr_x_scanned < nr_scans:
+            if nr_x_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
+            np.save(name, s21)
+            nr_x_scanned += 1
+            if nr_x_scanned < nr_scans:
+                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                pygame.time.wait(wait)
+                x += 1
+        if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
+            if nr_y_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
@@ -400,7 +398,7 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'Mappings/LT343chip2/'
+                    dir = 'Mappings/'
                     date = timestamp()
                     color = 'blue'
                     freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
