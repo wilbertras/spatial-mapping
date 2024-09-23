@@ -2,6 +2,7 @@ import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.signal import convolve, find_peaks
 import tkinter as tk
 from tkinter import filedialog
 
@@ -39,7 +40,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
         KID_cryoIn = bfin(f0)
         vna_power = kidpower - KID_cryoIn
         subscan = vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, i)
-        print('Subscan %d/%d complete' % (i+1, num_subscans))
+        print('Subscan %d/%d complete' % (i+1, num_subscans), end='\r')
         scans.append(subscan)
     s21 = np.array(scans).flatten()
     print('S21 completed')
@@ -121,6 +122,20 @@ def set_weinschell(weinschell, attn):
     weinschell.write(f'CHAN2;ATTN {attn_chan2}')
             
 
+def sec_diff(s21, sw):
+    window = np.ones(sw)/sw
+    print(len(s21))
+    smooth_s21 = convolve(s21, window, mode='valid')
+    print(len(smooth_s21))
+    ds21 = np.diff(smooth_s21, 1)
+    print(len(ds21))
+    smooth_ds21 = convolve(ds21, window, mode='valid')
+    print(len(smooth_ds21))
+    d2s21 = np.diff(smooth_ds21, 1)
+    print(len(d2s21))
+    return d2s21
+
+
 def plot_s21(freqs, s21):
     fig, ax = plt.subplots()
     _ = ax.plot(freqs, s21, lw=0.2)
@@ -129,7 +144,26 @@ def plot_s21(freqs, s21):
     ax.set_ylabel('|$S_{21}$| [dB]')
     ax.set_title('S21 from VNA')
     ax.grid(which='Major')
-    plt.show()
+    return fig
+
+
+def plot_pks(freqs, s21, d2s21, locs, mph, sw):
+    dw = len(s21)-len(d2s21)
+    fig, axes = plt.subplot_mosaic('a;b', constrained_layout=True, figsize=(12, 6), sharex=True)
+    ax = axes['a']
+    _ = ax.plot(freqs[dw:], d2s21, lw=0.2)
+    ax.scatter(freqs[dw:][locs], d2s21[locs], marker='v', color='None', edgecolor='tab:green')
+    ax.axhline(mph, c='tab:red')
+    ax = axes['b']
+    dw -= sw
+    _ = ax.plot(freqs[dw:], s21[dw:], lw=0.2)
+    ax.scatter(freqs[dw:][locs], s21[dw:][locs], marker='^', color='None', edgecolor='tab:green', label=str(len(locs)) + ' peaks')
+    ax.set_xlim([np.amin(freqs), np.amax(freqs)])
+    ax.set_ylabel('|$S_{21}$| [dB]')
+    ax.set_xlabel('F [GHz]')
+    ax.set_ylabel('|$S_{21}$| [dB]')
+    ax.grid(which='Major')
+    ax.legend(loc='upper right')
     return fig
 
 
@@ -162,3 +196,23 @@ def save_fig(fig):
         print(f"Figure saved to {file_path}")
     else:
         print("Save operation cancelled")
+
+
+def open_numpy_array(skip_rows=0):
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+
+    # Open file dialog to select the directory and file name
+    file_path = filedialog.askopenfilename(filetypes=[("All Files", "*.*")])
+    
+    if file_path:
+        if file_path.split('.')[-1] == 'npy':
+            arr = np.load(file_path)
+            print(f"Array loaded from {file_path}")
+            return arr
+        elif file_path.split('.')[-1] == 'dat':
+            arr = np.loadtxt(file_path, delimiter='\t', skiprows=skip_rows, dtype=float)
+            return arr
+    else:
+        print("Open operation cancelled")
+        return None
