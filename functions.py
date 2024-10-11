@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
+def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KIDS\KIDS.csa'):
     bfout, bfin, rfout = power_calibration()
     subscanbw *= 1e-3
     totscanbw = fstop - fstart
@@ -21,7 +21,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw):
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
-    init_vna(vna)
+    init_vna(vna, calibfile=calfile)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
@@ -58,6 +58,7 @@ def power_calibration():
     rfout = interp1d(RFout[:, 0], RFout[:, 1])
     return bfout, bfin, rfout
 
+
 def connect2vi(VISA, timeout=300000):
     rm = pyvisa.ResourceManager() 
     vi = rm.open_resource(VISA)
@@ -68,13 +69,13 @@ def connect2vi(VISA, timeout=300000):
         print('Could not connect to VI')
     return vi
 
-def init_vna(vna):
+
+def init_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     vna.write(f'SYST:PRES')
     vna.write(f'CONT:AUX:OUTP2:VOLT 0')
     vna.write(f'CONT:AUX:OUTP1:VOLT 5')
-    
     vna.write('OUTP ON')
-    # vna.write('MMEMORY:LOAD "D:\KIDS\KIDs.csa";')
+    vna.write(f'MMEMORY:LOAD:CSAR "{calibfile}";')
     vna.query(f'*OPC?')
     vna.write('SENS1:SWE:TRIG:POIN OFF;')
     vna.write('TRIG:SCOP CURR;')
@@ -101,7 +102,7 @@ def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
     vna.write(f'TRIG:SOUR MAN;')
     vna.write(f'INIT:CONT OFF;')
     power = float(vna.query(f'SOUR1:POW1:LEV?'))
-    print('VNA power = %.2f' % power)
+    # print('VNA power = %.2f' % power, end='\r')
     
     # Trigger a single sweep
     vna.write(f'TRIG:SCOP CURR;')
@@ -111,8 +112,7 @@ def vna_scan(vna, f0, subscanbw, num_points, vna_power, ifbw, id):
         s21 = np.array(response)
         if vna.query(f'*OPC?'):
             # print('Subscan %d complete' % (id))
-            pass
-        
+            pass       
     return s21
 
 
@@ -149,7 +149,7 @@ def plot_s21(freqs, s21):
 
 def plot_pks(freqs, s21, d2s21, locs, mph, sw):
     dw = len(s21)-len(d2s21)
-    fig, axes = plt.subplot_mosaic('a;b', constrained_layout=True, figsize=(12, 6), sharex=True)
+    fig, axes = plt.subplot_mosaic('aac;b', constrained_layout=True, figsize=(12, 6), sharex=True)
     ax = axes['a']
     _ = ax.plot(freqs[dw:], d2s21, lw=0.2)
     ax.scatter(freqs[dw:][locs], d2s21[locs], marker='v', color='None', edgecolor='tab:green')
@@ -165,6 +165,16 @@ def plot_pks(freqs, s21, d2s21, locs, mph, sw):
     ax.grid(which='Major')
     ax.legend(loc='upper right')
     return fig
+
+
+def plot_dfs(locs, freqs):
+    f0s = freqs[locs]
+    dfs = f0s[1:] - f0s[:-1]
+    fig, ax = plt.subplots()
+    ax.hist(dfs*1e3, bins='auto')
+    ax.set_xlabel('df [MHz]')
+    ax.set_ylabel('Counts')
+    ax.set_title('Frequency spacings')
 
 
 def save_numpy_array(arr):

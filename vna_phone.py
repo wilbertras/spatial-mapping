@@ -133,8 +133,8 @@ scanline = False
 scancolor = 0
 
 ## Input S21 parameters
-fstart = 4.9  # GHz
-fstop = 7.1  # GHz
+fstart = 4.1  # GHz
+fstop = 8.3  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -178,25 +178,25 @@ while running:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
             _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
+            name = '%sS21s_2ndhalf/S21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
             np.save(name, s21)
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                 pygame.time.wait(wait)
                 x += 1
-        if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
-            if nr_y_scanned == 0:
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, 0, nr_y_scanned+1, w, color, date)
-            np.save(name, s21)
-            nr_y_scanned += 1
-            if nr_y_scanned < nr_scans:
-                device.shell("input keyevent KEYCODE_DPAD_UP")
-                pygame.time.wait(wait)
-                y += 1
+        # if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
+        #     if nr_y_scanned == 0:
+        #         device.shell("input keyevent KEYCODE_B")
+        #         pygame.time.wait(wait)
+        #     _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+        #     name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, 0, nr_y_scanned+1, w, color, date)
+        #     np.save(name, s21)
+        #     nr_y_scanned += 1
+        #     if nr_y_scanned < nr_scans:
+        #         device.shell("input keyevent KEYCODE_DPAD_UP")
+        #         pygame.time.wait(wait)
+        #         y += 1
         if nr_y_scanned == nr_scans:
             measure = 0
             print('Helemaal f*cking klaar met de meting')
@@ -205,7 +205,7 @@ while running:
     
 
     if scanline:
-        dir = 'Mappings/LT343chip2/test/'
+        dir = 'Mappings/'
         date = timestamp()
         colornames = ['blue']
         device.shell("input keyevent KEYCODE_B")
@@ -398,24 +398,24 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'Mappings/'
+                    dir = 'Mappings/LT361w2chip4/'
                     date = timestamp()
                     color = 'blue'
-                    freqsname = '%sS21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
-                    darkname = '%sS21_w%d_%s_%s_dark.npy' % (dir, w, color, date)
+                    freqsname = '%sS21s/S21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
+                    darkname = '%sS21s/S21_w%d_%s_%s_dark.npy' % (dir, w, color, date)
                     settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
                     dict = {'color':colors[color_cycler % nr_colors], 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
                             'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
-                    with open(settingsname, 'w') as file:
-                        json.dump(dict, file)
+                    # with open(settingsname, 'w') as file:
+                    #     json.dump(dict, file)
 
                     # Make dark scan and save it
                     device.shell("input keyevent KEYCODE_B")
                     pygame.time.wait(wait)
                     freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                    np.save(darkname, dark_s21)
-                    np.save(freqsname, freqs)
+                    # np.save(darkname, dark_s21)
+                    # np.save(freqsname, freqs)
                     print('Saved: %s' % darkname)
                     fig, ax = plt.subplots()
                     ax.plot(freqs, dark_s21)

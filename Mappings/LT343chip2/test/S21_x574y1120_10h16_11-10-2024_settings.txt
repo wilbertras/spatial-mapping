@@ -1,0 +1,1 @@
+{"color": [0, 0, 255], "fstart": 5, "fstop": 105, "subscanbw": 100, "kidpower": -110, "ifbw": 1000}

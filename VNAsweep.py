@@ -2,15 +2,15 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 4.6         # GHz
-    fstop = 6.6          # GHz
-    scanbw = 50        # MHz
-    nr_points = 6401
-    power = -112        # dBm
+    fstart = 4         # GHz
+    fstop = 8.5         # GHz
+    scanbw = 100       # MHz
+    nr_points = 3201
+    power = -110        # dBm
     ifbw = 1000         # Hz
 
     st = time.time()
-    freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw)
+    freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw, calfile='D:\KIDS\KIDS.csa')
     et = time.time()
     elapsed_time = et - st
     print('Elapsed time = %d seconds' % elapsed_time)
