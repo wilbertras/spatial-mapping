@@ -42,7 +42,7 @@ def select_directory():
 
 ## Input S21 parameters
 fstart = 4.1  # GHz
-fstop = 8.3  # GHz
+fstop = 8.2  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -347,11 +347,12 @@ while running:
             square = (square + 1) % 2
         if event.key == pygame.K_m:
             datadir = select_directory()
-            if maindir:
+            if datadir:
                 print(f"Selected directory: {datadir}")
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             date = timestamp()
-            name = '%s/S21_%s.npy' % (datadir, date)
+            c = colors[color_cycler % nr_colors]
+            name = '%s/S21_x%dy%d_w%d.npy' % (datadir, x, y, w)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
