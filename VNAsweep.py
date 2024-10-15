@@ -2,8 +2,8 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 4         # GHz
-    fstop = 8.5         # GHz
+    fstart = 4.1         # GHz
+    fstop = 8.2         # GHz
     scanbw = 100       # MHz
     nr_points = 3201
     power = -110        # dBm
@@ -18,4 +18,5 @@ if __name__ == "__main__":
     fig = plot_s21(freqs, s21)
     plt.show()
     file_path = save_numpy_array(np.stack((freqs, s21), axis=-1).T)
-    fig.savefig(file_path.split('.')[0] + '.png')
+    if file_path:
+        fig.savefig(file_path.split('.')[0] + '.png')

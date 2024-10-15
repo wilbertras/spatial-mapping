@@ -149,7 +149,7 @@ def plot_s21(freqs, s21):
 
 def plot_pks(freqs, s21, d2s21, locs, mph, sw):
     dw = len(s21)-len(d2s21)
-    fig, axes = plt.subplot_mosaic('aac;b', constrained_layout=True, figsize=(12, 6), sharex=True)
+    fig, axes = plt.subplot_mosaic('a;b', constrained_layout=True, figsize=(12, 6), sharex=True)
     ax = axes['a']
     _ = ax.plot(freqs[dw:], d2s21, lw=0.2)
     ax.scatter(freqs[dw:][locs], d2s21[locs], marker='v', color='None', edgecolor='tab:green')

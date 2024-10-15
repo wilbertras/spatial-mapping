@@ -12,7 +12,8 @@ if __name__ == "__main__":
     locs, props = find_peaks(d2s21, height=mph, prominence=mph)
 
     fig = plot_pks(freqs, s21, d2s21, locs, mph, sw)
-    # plot_dfs(locs, freqs)
+    plot_dfs(locs, freqs)
     plt.show()
     file_path = save_numpy_array(freqs[sw:][locs].T)
-    fig.savefig(file_path.split('.')[0] + '.png')
+    if file_path:
+        fig.savefig(file_path.split('.')[0] + '.png')
