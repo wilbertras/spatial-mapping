@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import sys
 import json
 from copy import copy
+import tkinter as tk
+from tkinter import filedialog
 
 
 def timestamp():
@@ -16,26 +18,59 @@ def timestamp():
     day = datetime.now().day
     hour = datetime.now().hour
     minute = datetime.now().minute
-    return '%dh%d_%d-%d-%d' % (hour, minute, day, month, year)
+    return '_%d%d%d_%dh%d' % (year, month, day, hour, minute)
+
+
+def create_directory(base_name):
+    dir_name = base_name
+    counter = 1
+    while os.path.exists(dir_name):
+        dir_name = f"{base_name}({counter})"
+        counter += 1
+    os.makedirs(dir_name)
+    return dir_name
+
+def select_directory():
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    initial_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current file
+    selected_dir = filedialog.askdirectory(title="Select Directory", initialdir=initial_dir)
+    root.destroy()
+    return selected_dir
+
+
+
+## Input S21 parameters
+fstart = 4.1  # GHz
+fstop = 8.3  # GHz
+totscanbw = fstop - fstart
+num_points = 3201
+subscanbw = 100  # MHz
+num_subscans = int(np.ceil(totscanbw / subscanbw))
+realfstart = fstart
+realfstop = fstart + num_subscans * subscanbw
+len_s21 = int(num_subscans * num_points)
+kidpower = -110 # dBm
+ifbw = 1000  # Hz
+freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
+date = datetime.today()
+
 
 try:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
 except:
     print('No phone connected')
-
 devices = client.devices()
-
 if len(devices) == 0:
     print('No devices')
     quit()
-
 device = devices[0]
-
 print(f'Connected to {device}')
 
-pygame.init()
+
 # Constants
+pygame.init()
 red = 255, 0, 0
 green = 0, 255, 0
 blue = 0, 0, 255
@@ -53,7 +88,6 @@ small_box_height = height // 8
 big_box_height = height // 2
 small_font_size = 20
 big_font_size = 30
-
 screen = pygame.display.set_mode((width, height))
 
 def draw_text_boxes(text_list, bgcolor, linecolor):
@@ -132,20 +166,6 @@ square = 0
 scanline = False
 scancolor = 0
 
-## Input S21 parameters
-fstart = 4.1  # GHz
-fstop = 8.3  # GHz
-totscanbw = fstop - fstart
-num_points = 3201
-subscanbw = 100  # MHz
-num_subscans = int(np.ceil(totscanbw / subscanbw))
-realfstart = fstart
-realfstop = fstart + num_subscans * subscanbw
-len_s21 = int(num_subscans * num_points)
-kidpower = -110 # dBm
-ifbw = 1000  # Hz
-freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
-date = datetime.today()
 
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
@@ -177,9 +197,9 @@ while running:
             if nr_x_scanned == 0:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-            _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%sS21s_2ndhalf/S21_x%dy%d_w%d_%s_%s.npy' % (dir, nr_x_scanned+1, 0, w, color, date)
-            np.save(name, s21)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            name = '%s/S21_x%dy%d.npy' % (datadir, nr_x_scanned+1, 0)
+            np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_x_scanned += 1
             if nr_x_scanned < nr_scans:
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
@@ -202,52 +222,6 @@ while running:
             print('Helemaal f*cking klaar met de meting')
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-    
-
-    if scanline:
-        dir = 'Mappings/'
-        date = timestamp()
-        colornames = ['blue']
-        device.shell("input keyevent KEYCODE_B")
-        pygame.time.wait(wait)
-        _, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-        name = '%sS21_dark_%s.npy' % (dir, date)
-        np.save(name, dark_s21)
-        for i in range(3):
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
-
-        for i in range(3):
-            # device.shell("input keyevent KEYCODE_I")
-            # pygame.time.wait(wait)
-            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            # # s21 = np.zeros(10)
-            # color = 'black'
-            # name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
-            # np.save(name, s21)
-            # device.shell("input keyevent KEYCODE_I")
-            # pygame.time.wait(wait)
-
-            for color in colornames:
-                _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                # s21 = np.zeros(10)
-                name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, x, y, w, color, date)
-                np.save(name, s21)
-                device.shell("input keyevent KEYCODE_G")
-                pygame.time.wait(wait)
-            device.shell("input keyevent KEYCODE_E")
-            pygame.time.wait(wait)
-            w += step  
-        freqsname = '%sS21_x%dy%d_%s_freqs.npy' % (dir, x, y, date) 
-        np.save(freqsname, freqs)           
-        settingsname = '%sS21_x%dy%d_%s_settings.txt' % (dir, x, y, date)
-        dict = {'color':colors[color_cycler % nr_colors], 
-                'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                'kidpower':kidpower, 'ifbw':ifbw}
-        with open(settingsname, 'w') as file:
-            json.dump(dict, file)
-        scanline = False
-
 
     event = pygame.event.poll()
 
@@ -372,8 +346,22 @@ while running:
             pygame.time.wait(wait)
             square = (square + 1) % 2
         if event.key == pygame.K_m:
-            scanline = True
+            datadir = select_directory()
+            if maindir:
+                print(f"Selected directory: {datadir}")
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            date = timestamp()
+            name = '%s/S21_%s.npy' % (datadir, date)
+            np.save(name, np.stack((freqs, s21), axis=-1).T)
+            print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
+                maindir = select_directory()
+                if maindir:
+                    print(f"Selected directory: {maindir}")
+                date = timestamp()
+                datadir = '/S21s' + date
+                create_directory(dir + datadir)
+
                 # Set screen and stepsizes to correct values
                 if inverted:
                     print('Putting inverted screen back to normal')
@@ -398,24 +386,20 @@ while running:
                     nr_scans = int(input('Please input the number of scans in x and y: '))
                     
                     # Initiate array
-                    dir = 'Mappings/LT361w2chip4/'
-                    date = timestamp()
-                    color = 'blue'
-                    freqsname = '%sS21s/S21_w%d_%s_%s_freqs.npy' % (dir, w, color, date)
-                    darkname = '%sS21s/S21_w%d_%s_%s_dark.npy' % (dir, w, color, date)
-                    settingsname = '%sS21_w%d_%s_%s_settings.txt' % (dir, w, color, date)
+                    freqsname = '%s/freqs.npy' % (datadir)
+                    darkname = '%s/S21_dark.npy' % (datadir)
+                    settingsname = '%s/settings.txt' % (datadir)
                     dict = {'color':colors[color_cycler % nr_colors], 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
                             'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
-                    # with open(settingsname, 'w') as file:
-                    #     json.dump(dict, file)
+                    with open(settingsname, 'w') as file:
+                        json.dump(dict, file)
 
                     # Make dark scan and save it
                     device.shell("input keyevent KEYCODE_B")
                     pygame.time.wait(wait)
                     freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                    # np.save(darkname, dark_s21)
-                    # np.save(freqsname, freqs)
+                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
                     print('Saved: %s' % darkname)
                     fig, ax = plt.subplots()
                     ax.plot(freqs, dark_s21)
