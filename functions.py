@@ -70,6 +70,10 @@ def connect2vi(VISA, timeout=300000):
     return vi
 
 
+# def cal_vna():
+    
+
+
 def init_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     vna.write(f'SYST:PRES')
     vna.write(f'CONT:AUX:OUTP2:VOLT 0')

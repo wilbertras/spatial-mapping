@@ -30,14 +30,14 @@ def create_directory(base_name):
     os.makedirs(dir_name)
     return dir_name
 
-def select_directory():
+def select_directory(initial_dir=None):
     root = tk.Tk()
     root.withdraw()  # Hide the root window
-    initial_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current file
+    if not initial_dir:
+        initial_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current file
     selected_dir = filedialog.askdirectory(title="Select Directory", initialdir=initial_dir)
     root.destroy()
     return selected_dir
-
 
 
 ## Input S21 parameters
@@ -165,8 +165,8 @@ dark = 0
 square = 0
 scanline = False
 scancolor = 0
-
-
+datadir = None
+steps = [2, 3, 4]
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
 weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
@@ -193,18 +193,34 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        if nr_x_scanned < nr_scans:
-            if nr_x_scanned == 0:
-                device.shell("input keyevent KEYCODE_B")
+        if nr_x_scanned == 0:
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
+        for step in [0]+steps:
+            for i in range(step):
+                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                 pygame.time.wait(wait)
+                x += 1
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             name = '%s/S21_x%dy%d.npy' % (datadir, nr_x_scanned+1, 0)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_x_scanned += 1
-            if nr_x_scanned < nr_scans:
-                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-                pygame.time.wait(wait)
-                x += 1
+        measure = 0
+        print('Helemaal f*cking klaar met de meting')
+        device.shell("input keyevent KEYCODE_B")
+        pygame.time.wait(wait)
+        # if nr_x_scanned < nr_scans:
+        #     if nr_x_scanned == 0:
+        #         device.shell("input keyevent KEYCODE_B")
+        #         pygame.time.wait(wait)
+        #     freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+        #     name = '%s/S21_x%dy%d.npy' % (datadir, nr_x_scanned+1, 0)
+        #     np.save(name, np.stack((freqs, s21), axis=-1).T)
+        #     nr_x_scanned += 1
+        #     if nr_x_scanned < nr_scans:
+        #         device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+        #         pygame.time.wait(wait)
+        #         x += 1
         # if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
         #     if nr_y_scanned == 0:
         #         device.shell("input keyevent KEYCODE_B")
@@ -217,11 +233,11 @@ while running:
         #         device.shell("input keyevent KEYCODE_DPAD_UP")
         #         pygame.time.wait(wait)
         #         y += 1
-        if nr_y_scanned == nr_scans:
-            measure = 0
-            print('Helemaal f*cking klaar met de meting')
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
+        # if nr_y_scanned == nr_scans:
+        #     measure = 0
+        #     print('Helemaal f*cking klaar met de meting')
+        #     device.shell("input keyevent KEYCODE_B")
+        #     pygame.time.wait(wait)
 
     event = pygame.event.poll()
 
@@ -346,7 +362,7 @@ while running:
             pygame.time.wait(wait)
             square = (square + 1) % 2
         if event.key == pygame.K_m:
-            datadir = select_directory()
+            datadir = select_directory(initial_dir=datadir)
             if datadir:
                 print(f"Selected directory: {datadir}")
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
@@ -363,51 +379,51 @@ while running:
                 datadir = '/S21s' + date
                 create_directory(dir + datadir)
 
-                # Set screen and stepsizes to correct values
-                if inverted:
-                    print('Putting inverted screen back to normal')
-                    device.shell("input keyevent KEYCODE_I")
-                    pygame.time.wait(wait)
-                    inverted = 0
-                if dx != 1:
-                    print('Putting dX to 1')
-                    device.shell("input keyevent KEYCODE_X")
-                    pygame.time.wait(wait)
-                    dx = 1
-                if dy != 1:
-                    print('Putting dY to 1')
-                    device.shell("input keyevent KEYCODE_Y")
-                    pygame.time.wait(wait)
-                    dy = 1
+                # # Set screen and stepsizes to correct values
+                # if inverted:
+                #     print('Putting inverted screen back to normal')
+                #     device.shell("input keyevent KEYCODE_I")
+                #     pygame.time.wait(wait)
+                #     inverted = 0
+                # if dx != 1:
+                #     print('Putting dX to 1')
+                #     device.shell("input keyevent KEYCODE_X")
+                #     pygame.time.wait(wait)
+                #     dx = 1
+                # if dy != 1:
+                #     print('Putting dY to 1')
+                #     device.shell("input keyevent KEYCODE_Y")
+                #     pygame.time.wait(wait)
+                #     dy = 1
                 
-                w_okay = input('The linewidth is now %d, is that correct? (Y/N):' % (w))
+                # w_okay = input('The linewidth is now %d, is that correct? (Y/N):' % (w))
 
-                if w_okay:
-                    # Ask input on number of scans
-                    nr_scans = int(input('Please input the number of scans in x and y: '))
-                    
-                    # Initiate array
-                    freqsname = '%s/freqs.npy' % (datadir)
-                    darkname = '%s/S21_dark.npy' % (datadir)
-                    settingsname = '%s/settings.txt' % (datadir)
-                    dict = {'color':colors[color_cycler % nr_colors], 'width':w,
-                            'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                            'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
-                    with open(settingsname, 'w') as file:
-                        json.dump(dict, file)
+                # if w_okay:
+                # Ask input on number of scans
+                # nr_scans = int(input('Please input the number of scans in x and y: '))
+                
+                # Initiate array
+                freqsname = '%s/freqs.npy' % (datadir)
+                darkname = '%s/S21_dark.npy' % (datadir)
+                settingsname = '%s/settings.txt' % (datadir)
+                dict = {'color':colors[color_cycler % nr_colors], 'width':w,
+                        'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                        'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
+                with open(settingsname, 'w') as file:
+                    json.dump(dict, file)
 
-                    # Make dark scan and save it
-                    device.shell("input keyevent KEYCODE_B")
-                    pygame.time.wait(wait)
-                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
-                    print('Saved: %s' % darkname)
-                    fig, ax = plt.subplots()
-                    ax.plot(freqs, dark_s21)
-                    plt.show()
-                    measure = 1
-                else:
-                    pass
+                # Make dark scan and save it
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                print('Saved: %s' % darkname)
+                fig, ax = plt.subplots()
+                ax.plot(freqs, dark_s21)
+                plt.show()
+                measure = 1
+                # else:
+                #     pass
     pygame.display.flip()
 pygame.quit()
 sys.exit()
