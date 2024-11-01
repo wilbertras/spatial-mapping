@@ -70,7 +70,7 @@ def connect2vi(VISA, timeout=300000):
     return vi
 
 
-def calibrate_vna(vna):
+def calibrate_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     # Instellen van GPIB-resource manager
     # rm = pyvisa.ResourceManager()
     try:
@@ -78,23 +78,22 @@ def calibrate_vna(vna):
         # vna = rm.open_resource('GPIB::16')
         
         # 1. Laad het kalibratiebestand 'kids.csa'
-        vna.write("MMEM:LOAD 'kids.csa'")  # Mogelijk andere SCPI-syntax afhankelijk van VNA-model
+        # vna.write("MMEM:LOAD 'kids.csa'")  # Mogelijk andere SCPI-syntax afhankelijk van VNA-model
         
         # 2. Start een nieuwe kalibratie
-        vna.write("SENS:CORR:COLL:FULL")   # Start een volledige 2-poorts kalibratie
+        vna.write(f"SENS:CORR:COLL:FULL")   # Start een volledige 2-poorts kalibratie
         
         # 3. Wacht tot de kalibratie voltooid is
-        vna.query("*OPC?")                 # Blokkeer totdat kalibratie voltooid is
+        vna.query(f"*OPC?")                 # Blokkeer totdat kalibratie voltooid is
         
         # 4. Sla de nieuwe kalibratie op onder dezelfde naam 'kids.csa'
-        vna.write("MMEM:SAVE 'kids.csa'")  # Opslaan met dezelfde bestandsnaam
+        vna.write(f'MMEMORY:STOR:CSAR "{calibfile}";')
         
         print("Kalibratie succesvol uitgevoerd en opgeslagen als 'kids.csa'")
         
     except pyvisa.VisaIOError as e:
         print(f"Fout bij het verbinden of communiceren met het VNA: {e}")
         
-
 
 def init_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     vna.write(f'SYST:PRES')

@@ -3,7 +3,7 @@ import time
 
 if __name__ == "__main__":
     fstart = 4.1         # GHz
-    fstop = 8.         # GHz
+    fstop = 4.2         # GHz
     scanbw = 100       # MHz
     nr_points = 3201
     power = -110        # dBm
