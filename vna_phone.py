@@ -42,16 +42,16 @@ def select_directory(initial_dir=None):
 
 ## Input S21 parameters
 fstart = 4.1  # GHz
-fstop = 4.6  # GHz
+fstop = 8.2  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
-subscanbw = 500  # MHz
+subscanbw = 100  # MHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -166,8 +166,8 @@ square = 0
 scanline = False
 scancolor = 0
 datadir = None
-steps = [3,3,3,4,3,3,3,3,3,4,3,3,3,3,3,4,3,3,3]
-steps = [1, 2, 3]
+steps = [4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3]
+
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
 weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
