@@ -14,7 +14,7 @@ from tkinter import filedialog
 
 ## Input S21 parameters
 fstart = 4.1  # GHz
-fstop = 8.2  # GHz
+fstop = 8.3  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -23,7 +23,7 @@ realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -132,13 +132,14 @@ green = 1
 nr_x_scans = 0
 nr_y_scans = 0
 measure = 0
-wait = 5
+wait = 1
 dark = 0
 square = 0
 scanline = False
 scancolor = 0
 datadir = None
 steps = []
+steps = [0, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3, 3, 4, 3, 3, 3, 4, 3, 3, 3, 3, 3, 4]
 
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
@@ -169,11 +170,13 @@ while running:
         if nr_x_scanned == 0:
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-        for step in [0]+steps:
+        for step in steps:
+            print('stepping ', step)
             for i in range(step):
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                 pygame.time.wait(wait)
                 x += 1
+            print('scanning: ', nr_x_scanned+1, '/', len(steps))
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             name = '%s/S21_x%dy%d.npy' % (datadir, nr_x_scanned+1, 0)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
@@ -323,11 +326,14 @@ while running:
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
-                backtrack = sum(steps)
-                for i in range(backtrack):
-                    device.shell("input keyevent KEYCODE_DPAD_left")
-                    pygame.time.wait(wait)
-                    x -= 1
+                print('steps: ', steps)
+                # print('x0=', x)
+                # backtrack = sum(steps)
+                # print('backtracking ', backtrack)
+                # for i in range(backtrack):
+                #     device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                #     pygame.time.wait(wait)
+                #     x -= 1
                 maindir = f.select_directory()
                 if maindir:
                     print(f"Selected directory: {maindir}")
