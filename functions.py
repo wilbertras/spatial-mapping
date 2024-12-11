@@ -5,6 +5,9 @@ from scipy.interpolate import interp1d
 from scipy.signal import convolve, find_peaks
 import tkinter as tk
 from tkinter import filedialog
+from datetime import datetime
+import os
+import matplotlib.pyplot as plt
 
 
 def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KIDS\KIDS.csa'):
@@ -233,3 +236,30 @@ def open_numpy_array(skip_rows=0):
     else:
         print("Open operation cancelled")
         return None
+
+def timestamp():
+    year = datetime.now().year
+    month = datetime.now().month
+    day = datetime.now().day
+    hour = datetime.now().hour
+    minute = datetime.now().minute
+    return '_%d%d%d_%dh%d' % (year, month, day, hour, minute)
+
+
+def create_directory(base_name):
+    dir_name = base_name
+    counter = 1
+    while os.path.exists(dir_name):
+        dir_name = f"{base_name}({counter})"
+        counter += 1
+    os.makedirs(dir_name)
+    return dir_name
+
+def select_directory(initial_dir=None):
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    if not initial_dir:
+        initial_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current file
+    selected_dir = filedialog.askdirectory(title="Select Directory", initialdir=initial_dir)
+    root.destroy()
+    return selected_dir

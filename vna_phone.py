@@ -12,34 +12,6 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def timestamp():
-    year = datetime.now().year
-    month = datetime.now().month
-    day = datetime.now().day
-    hour = datetime.now().hour
-    minute = datetime.now().minute
-    return '_%d%d%d_%dh%d' % (year, month, day, hour, minute)
-
-
-def create_directory(base_name):
-    dir_name = base_name
-    counter = 1
-    while os.path.exists(dir_name):
-        dir_name = f"{base_name}({counter})"
-        counter += 1
-    os.makedirs(dir_name)
-    return dir_name
-
-def select_directory(initial_dir=None):
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
-    if not initial_dir:
-        initial_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current file
-    selected_dir = filedialog.askdirectory(title="Select Directory", initialdir=initial_dir)
-    root.destroy()
-    return selected_dir
-
-
 ## Input S21 parameters
 fstart = 4.1  # GHz
 fstop = 8.2  # GHz
@@ -166,7 +138,7 @@ square = 0
 scanline = False
 scancolor = 0
 datadir = None
-steps = [4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3]
+steps = []
 
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
@@ -210,35 +182,6 @@ while running:
         print('Helemaal f*cking klaar met de meting')
         device.shell("input keyevent KEYCODE_B")
         pygame.time.wait(wait)
-        # if nr_x_scanned < nr_scans:
-        #     if nr_x_scanned == 0:
-        #         device.shell("input keyevent KEYCODE_B")
-        #         pygame.time.wait(wait)
-        #     freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-        #     name = '%s/S21_x%dy%d.npy' % (datadir, nr_x_scanned+1, 0)
-        #     np.save(name, np.stack((freqs, s21), axis=-1).T)
-        #     nr_x_scanned += 1
-        #     if nr_x_scanned < nr_scans:
-        #         device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-        #         pygame.time.wait(wait)
-        #         x += 1
-        # if (nr_x_scanned == nr_scans) & (nr_y_scanned < nr_scans):
-        #     if nr_y_scanned == 0:
-        #         device.shell("input keyevent KEYCODE_B")
-        #         pygame.time.wait(wait)
-        #     _, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-        #     name = '%sS21_x%dy%d_w%d_%s_%s.npy' % (dir, 0, nr_y_scanned+1, w, color, date)
-        #     np.save(name, s21)
-        #     nr_y_scanned += 1
-        #     if nr_y_scanned < nr_scans:
-        #         device.shell("input keyevent KEYCODE_DPAD_UP")
-        #         pygame.time.wait(wait)
-        #         y += 1
-        # if nr_y_scanned == nr_scans:
-        #     measure = 0
-        #     print('Helemaal f*cking klaar met de meting')
-        #     device.shell("input keyevent KEYCODE_B")
-        #     pygame.time.wait(wait)
 
     event = pygame.event.poll()
 
@@ -358,50 +301,39 @@ while running:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
                 dark = (dark + 1) % 4
+        if event.key == pygame.K_l:
+            if not len(steps):
+                steps.append(0)
+                start = copy(int(x))
+            else:
+                steps.append(int(x - start))
+                start = copy(x)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             pygame.time.wait(wait)
             square = (square + 1) % 2
         if event.key == pygame.K_m:
-            datadir = select_directory(initial_dir=datadir)
+            datadir = f.select_directory(initial_dir=datadir)
             if datadir:
                 print(f"Selected directory: {datadir}")
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            date = timestamp()
+            date = f.timestamp()
             c = colors[color_cycler % nr_colors]
             name = '%s/S21_x%dy%d_w%d.npy' % (datadir, x, y, w)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
-                maindir = select_directory()
+                backtrack = sum(steps)
+                for i in range(backtrack):
+                    device.shell("input keyevent KEYCODE_DPAD_left")
+                    pygame.time.wait(wait)
+                    x -= 1
+                maindir = f.select_directory()
                 if maindir:
                     print(f"Selected directory: {maindir}")
-                date = timestamp()
+                date = f.timestamp()
                 datadir = maindir + '/S21s' + date
-                create_directory(datadir)
-
-                # # Set screen and stepsizes to correct values
-                # if inverted:
-                #     print('Putting inverted screen back to normal')
-                #     device.shell("input keyevent KEYCODE_I")
-                #     pygame.time.wait(wait)
-                #     inverted = 0
-                # if dx != 1:
-                #     print('Putting dX to 1')
-                #     device.shell("input keyevent KEYCODE_X")
-                #     pygame.time.wait(wait)
-                #     dx = 1
-                # if dy != 1:
-                #     print('Putting dY to 1')
-                #     device.shell("input keyevent KEYCODE_Y")
-                #     pygame.time.wait(wait)
-                #     dy = 1
-                
-                # w_okay = input('The linewidth is now %d, is that correct? (Y/N):' % (w))
-
-                # if w_okay:
-                # Ask input on number of scans
-                # nr_scans = int(input('Please input the number of scans in x and y: '))
+                f.create_directory(datadir)
                 
                 # Initiate array
                 freqsname = '%s/freqs.npy' % (datadir)
@@ -423,8 +355,6 @@ while running:
                 ax.plot(freqs, dark_s21)
                 plt.show()
                 measure = 1
-                # else:
-                #     pass
     pygame.display.flip()
 pygame.quit()
 sys.exit()
