@@ -1,0 +1,56 @@
+datafiles
+# F0 Q Alarea in um^2
+
+parameters stored in 
+
+KIDdata.dat
+KID 17 - 38: 	old 1/2 wave qwave design chip from all masks before mask 345
+KID 201-209: 	opttest design mask 345, spica antenna's
+KID 1-16:	new blind HW/QW design, 1-8  QW, rest HW
+KID 211-220	opttest design mask 348 high Q chip
+
+KIDdataRJ7.dat
+KID 101-112 Reinier RJ7 batch blind chip
+602-622, Reiner SPICA 1/2wave array
+
+ApexarrayH10.dat
+all KIDs for H10 array low Q 
+length of Al part= 741 mu, area 2224.6 mu THIS IS WRONG AND IS REPAIRED 2--3-2011
+length of Al part= 1358 mu, area 4074 mu. Length whole KID=4248mu,
+
+ApexarrayK65.dat
+all KIDs for H10 array high Q without hybrids, i.e. Al only
+length of Al part= 4250 mu, area 12750 mu, whole KID=3mu
+
+
+Apexarray2mmpixelsH14.dat
+all KIDs for H10 array low Q
+length of Al part= 1543 mu, area 4629 mu
+
+H20_1_telescopechip.dat
+data is valid for all devices on the 6x4 array of 2 mm spaced we took to APEX in autumn 2011
+The design is single sided:
+top left 6x4 v3
+3x
+30
++
+479
++
+260
++
+269
++
+73.637 radius half circle=231.2989
+=1269.29*3=3807.87
+
+top left Apex 6x4 high Q (2 sided)
+3x
+513
++
+269
++
+26
++
+127.5 radius 1 circle=801
+=
+1609*3=4827

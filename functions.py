@@ -24,7 +24,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KI
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
-    init_vna(vna, calibfile=calfile)
+    # init_vna(vna, calibfile=calfile)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
@@ -86,10 +86,10 @@ def calibrate_vna(vna,  calibfile='D:\KIDS\KIDs.csa'):
 
 def init_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     vna.write('SYST:PRES')
-    vna.write('CONT:AUX:OUTP2:VOLT 0')
-    vna.write('CONT:AUX:OUTP1:VOLT 5')
+    vna.write('CONT:AUX:OUTP1:VOLT 0')
+    vna.write('CONT:AUX:OUTP2:VOLT 5')
     vna.write('OUTP ON')
-    vna.write(f'MMEMORY:LOAD:CSAR "{calibfile}";')
+    vna.write(f'MMEM:LOAD:CSAR {calibfile};')
     vna.query('*OPC?')
     vna.write('SENS1:SWE:TRIG:POIN OFF;')
     vna.write('TRIG:SCOP CURR;')
