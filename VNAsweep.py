@@ -2,12 +2,12 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 4.1         # GHz
-    fstop = 8.3         # GHz
+    fstart = 5.1         # GHz
+    fstop = 7.1         # GHz
     scanbw = 100       # MHz
     nr_points = 3201
     power = -110        # dBm
-    ifbw = 10000         # Hz
+    ifbw = 1000         # Hz
 
     st = time.time()
     freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw, calfile='D:\KIDS\KIDS.csa')
