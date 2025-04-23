@@ -13,8 +13,8 @@ from tkinter import filedialog
 
 
 ## Input S21 parameters
-fstart = 5.1 # GHz
-fstop = 7.1  # GHz
+fstart = 4.1 # GHz
+fstop = 8.8  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -138,8 +138,8 @@ square = 0
 scanline = False
 scancolor = 0
 datadir = None
-steps = [0, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 2, 3, 2]
-
+steps = [0,2,3,2,2,3,2,2,3,2,2,3,2,2,2,3,2,2,3,2,2,3,2,2,3,2,2,3,2,2,3,2]
+# steps = [0,2,3]
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
 weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
@@ -170,17 +170,17 @@ while running:
             device.shell("input keyevent KEYCODE_B")
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-        for step in steps:
-            print('stepping ', step)
-            for i in range(step):
-                device.shell("input keyevent KEYCODE_DPAD_UP")
-                pygame.time.wait(wait)
-                y += 1
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%s/S21_x%dy%d.npy' % (datadir, nr_y_scanned+1, 0)
-            np.save(name, np.stack((freqs, s21), axis=-1).T)
-            nr_y_scanned += 1
-            print('scanning: ', nr_y_scanned+1, '/', len(steps))
+            for step in steps:
+                print('stepping ', step)
+                for i in range(step):
+                    device.shell("input keyevent KEYCODE_DPAD_UP")
+                    pygame.time.wait(wait)
+                    y += 1
+                freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                name = '%s/S21_x%dy%d.npy' % (datadir, nr_y_scanned+1, 0)
+                np.save(name, np.stack((freqs, s21), axis=-1).T)
+                nr_y_scanned += 1
+                print('scanning: ', nr_y_scanned+1, '/', len(steps))
         measure = 0
         print('Helemaal f*cking klaar met de meting')
         device.shell("input keyevent KEYCODE_B")
