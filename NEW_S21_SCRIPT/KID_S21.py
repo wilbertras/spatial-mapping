@@ -37,7 +37,8 @@ def add_result(df_results, kid, power, temperature, fit_result, Pint):
                               "Qc_std": [fit_result.params['Qc_re'].stderr],
                               "Qi": [fit_result.params['Qi'].value],
                               "Qi_std": [fit_result.params['Qi'].stderr],
-                              "Pint": [Pint]})
+                              "Pint": [Pint],
+                              "redchisqr": [fit_result.redchi]})
     
     df_results = pd.concat([df_results, new_entry], ignore_index=True)
     
@@ -60,8 +61,8 @@ def find_S21_files(path):
 def loop_over_S21_files(path):
     filenames, kids = find_S21_files(path)
     
-    output_dir = "temperature_data"
-    os.makedirs(output_dir, exist_ok=True)
+    # output_dir = "temperature_data"
+    # os.makedirs(output_dir, exist_ok=True)
     
     df_results = create_result_pd()
     
@@ -91,22 +92,28 @@ def loop_over_S21_files(path):
         
                 # here we start fitting the data
                 result = Fit_S21(frequencies, s21_values)
+
                 S21_fit_line = result.eval()
-                
+                fig, ax = plt.subplots()
+                result.plot_fit(ax)
+                # print(result.chisqr)
+                # print(result.eval_uncertainty())
                 Pint = def_Pint(result.params['Ql'].value, result.params['Qc_re'].value, Pread)
                 
                 df_results = add_result(df_results, kid_id, Pread, temperature, result, Pint)
                 
                 df['Mag'] = 10**((s21_values - np.mean(s21_values[0:100]))/20)
                 df['Fit'] = S21_fit_line
-                
-                file_name = "KID" + str(kid_id) + "_" + str(int(Pread)) + f"dBm_{temperature*1e3:.2f}mK.csv"
-                output_path = os.path.join(output_dir, file_name)
+                # fig, ax = plt.subplots()
+                # ax.plot(frequencies, df['Mag'])
+                # ax.plot(frequencies, df['Fit'])
+                # file_name = "KID" + str(kid_id) + "_" + str(int(Pread)) + f"dBm_{temperature*1e3:.2f}mK.csv"
+                # output_path = os.path.join(output_dir, file_name)
 
                 # Save the DataFrame (Frequency, S21, Rad) to CSV
-                df.to_csv(output_path, index=False)
+                # df.to_csv(output_path, index=False)
         
-        print("Saved data for KID " + str(kid_id) +", Pread -" +str(int(-Pread)) + ' dBm', end='\r')
+        # print("Saved data for KID " + str(kid_id) +", Pread -" +str(int(-Pread)) + ' dBm', end='\r')
         
     return df_results
 
@@ -123,9 +130,9 @@ def Fit_S21(f, S21_dB):
     # load the models
     Model_mag = KhalilModel_magspace
     model_mag = Model_mag(f, S21_mag)
-
     # a first estimate of the fit
     result_pre = model_mag.fit(S21_mag, f=f, params = model_mag.guess)
+    # model_mag.plot_fit()
     
     
         
