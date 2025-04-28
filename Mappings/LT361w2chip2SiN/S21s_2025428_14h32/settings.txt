@@ -1,0 +1,1 @@
+{"color": [255, 255, 255], "width": 2, "fstart": 4, "fstop": 104, "subscanbw": 100, "kidpower": -110, "ifbw": 1000, "nr points": 3201}

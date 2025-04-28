@@ -13,8 +13,8 @@ from tkinter import filedialog
 
 
 ## Input S21 parameters
-fstart = 4.1 # GHz
-fstop = 8.8  # GHz
+fstart = 4 # GHz
+fstop = 8  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -23,7 +23,8 @@ realfstart = fstart
 realfstop = fstart + num_subscans * subscanbw
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
+steps = [0, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 3, 2, 2, 2, 3, 2, 2, 3, 2, 2, 3]   
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 
@@ -138,7 +139,6 @@ square = 0
 scanline = False
 scancolor = 0
 datadir = None
-steps = [0,2,3,2,2,3,2,2,3,2,2,3,2,2,2,3,2,2,3,2,2,3,2,2,3,2,2,3,2,2,3,2]
 # steps = [0,2,3]
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
