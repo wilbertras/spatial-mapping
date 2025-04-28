@@ -44,8 +44,10 @@ def add_result(df_results, kid, power, temperature, fit_result, Pint):
     
     return df_results
 
-def find_S21_files(path):
-    files = sorted(glob.glob(path + 'KID*.dat')) # a sorted lis of filenames in path
+def find_S21_files(path, kid='', pread=''):
+
+    string = path + 'KID%s_%sdBm*.dat' % (kid,pread)    
+    files = sorted(glob.glob(string)) # a sorted lis of filenames in path
     nr_files = len(files)
     
     kid = []
@@ -58,14 +60,23 @@ def find_S21_files(path):
     return files, kids
     # optional print some info like path name and nr of KIDs
     
-def loop_over_S21_files(path):
-    filenames, kids = find_S21_files(path)
+def loop_over_S21_files(path, kid=None, pread=None, plot=False):
+    if not kid:
+        kid = '*'
+    else:
+        kid = str(kid)
+    if not pread:
+        pread = '*'
+    else:
+        pread = str(pread)
+
+    filenames, kids = find_S21_files(path, kid, pread)
     
     # output_dir = "temperature_data"
     # os.makedirs(output_dir, exist_ok=True)
     
     df_results = create_result_pd()
-    
+
     for file_path in filenames:
         [kid, power] = re.findall("KID(\d+)_(\d+)dBm_", file_path)[0]
         kid_id = int(kid)
@@ -94,10 +105,10 @@ def loop_over_S21_files(path):
                 result = Fit_S21(frequencies, s21_values)
 
                 S21_fit_line = result.eval()
-                fig, ax = plt.subplots()
-                result.plot_fit(ax)
-                # print(result.chisqr)
-                # print(result.eval_uncertainty())
+                if plot:
+                    if len(filenames) % plot == 0:
+                        fig, ax = plt.subplots()
+                        result.plot_fit(ax)
                 Pint = def_Pint(result.params['Ql'].value, result.params['Qc_re'].value, Pread)
                 
                 df_results = add_result(df_results, kid_id, Pread, temperature, result, Pint)
