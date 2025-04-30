@@ -77,7 +77,7 @@ def loop_over_S21_files(path, kid=None, pread=None, plot=False):
     
     df_results = create_result_pd()
 
-    for file_path in filenames:
+    for i, file_path in enumerate(filenames):
         [kid, power] = re.findall("KID(\d+)_(\d+)dBm_", file_path)[0]
         kid_id = int(kid)
         Pread = -float(power)
@@ -106,7 +106,7 @@ def loop_over_S21_files(path, kid=None, pread=None, plot=False):
 
                 S21_fit_line = result.eval()
                 if plot:
-                    if len(filenames) % plot == 0:
+                    if i % plot == 0:
                         fig, ax = plt.subplots()
                         result.plot_fit(ax)
                 Pint = def_Pint(result.params['Ql'].value, result.params['Qc_re'].value, Pread)
