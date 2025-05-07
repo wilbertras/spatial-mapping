@@ -2,19 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from functions import *
 from scipy.signal import find_peaks, convolve
-from scipy.optimize import curve_fit
 from glob import glob
 from natsort import natsorted
 import matplotlibcolors
-import time
 plt.style.use('matplotlibrc')
 
-
-def line(x, a, b):
-    return a * x + b 
-
-def inv_line(x, a, b):
-    return (x - b) / a
 
 if __name__ == "__main__":
     fstart = 4         # GHz
