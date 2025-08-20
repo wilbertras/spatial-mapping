@@ -8,7 +8,7 @@ if __name__ == "__main__":
     file='D:\KIDS\KIDs.csa'
     init_vna(vna, calibfile=file)
 
-    vna_scan(vna, 4.75, 7.5, 3201, -110, 10000, 1)
+    vna_scan(vna, 3, 9, 3201, -110, 10000, 1)
 
     calibrate_vna(vna)
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         s21 = np.array(response)
     # freqs = np.array(vna.query_ascii_values('CALC1:MEAS1:MIX:XAX?;'))
     init_vna(vna, calibfile='D:\KIDS\KIDs.csa')
-    vna_scan(vna, 4.75, 7.5, 3201, -110, 10000, 1)
+    vna_scan(vna, 3, 9, 3201, -110, 10000, 1)
     vna.write(f'MMEMORY:STOR:CSAR "{file}";')  # Opslaan met dezelfde bestandsnaam
 
     fig, ax = plt.subplots()

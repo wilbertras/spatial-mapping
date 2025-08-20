@@ -4,7 +4,7 @@ from scipy.signal import find_peaks
 
 if __name__ == "__main__":
     sw = 9         # smoothing window length must be even
-    mph = 0.01      # minimal peak height 
+    mph = 0.025      # minimal peak height 
 
     arr = open_numpy_array()
     freqs, s21 = arr

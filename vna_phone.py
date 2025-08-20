@@ -14,7 +14,7 @@ from tkinter import filedialog
 
 ## Input S21 parameters
 fstart = 4 # GHz
-fstop = 8  # GHz
+fstop = 8.3  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -140,6 +140,7 @@ scanline = False
 scancolor = 0
 datadir = None
 # steps = [0,2,3]
+steps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
 # ## Test connection to Virtual Intstruments
 vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
 weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)

@@ -3,14 +3,14 @@ import time
 
 if __name__ == "__main__":
     fstart = 4         # GHz
-    fstop = 8         # GHz
-    scanbw = 100       # MHz
+    fstop = 5         # GHz
+    scanbw = 1000       # MHz
     nr_points = 3201
     power = -110        # dBm
     ifbw = 1000         # Hz
 
     st = time.time()
-    freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw, calfile='D:\KIDS\KIDS.csa')
+    freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw, calfile='D:\KIDS\KIDs.csa')
     et = time.time()
     elapsed_time = et - st
     print('Elapsed time = %d seconds' % elapsed_time)
