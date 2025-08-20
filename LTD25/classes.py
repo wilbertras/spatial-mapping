@@ -14,7 +14,11 @@ class Mapping:
     """
 
     def __init__(self, file):
-        arr = np.loadtxt(file, skiprows=1, delimiter=',', unpack=True)
+        self.file = file
+        arr = np.loadtxt(self.file, skiprows=1, delimiter=',', unpack=True)
+        self.initialize(arr)
+
+    def initialize(self, arr):
         self.idx = arr[0].astype(int)
         self.row = arr[1].astype(int)
         self.col = arr[2].astype(int)
@@ -25,26 +29,18 @@ class Mapping:
         self.Lc = arr[4]
         self.fd = arr[5]
         self.fm = arr[6]
-        self.fd2 = arr[7]
-        self.Lf2 = arr[8]
-        self.fm2 = arr[9]
-        self.trimmed = np.any(~np.isnan(self.fm2))
-        if self.trimmed:
-            self.nanmask = np.isnan(self.fm2)
-        else:
-            self.nanmask = np.isnan(self.fm)
         self.map = self.make_map(self.M, self.N)
         self.df_f = self.comp_df_f(self.fd, self.fm)
         self.fd_fit, self.popt = self.fit(self.fd, self.fm)
         self.std = np.nanstd(self.df_f)
         self.df_f_fit = self.comp_df_f(self.fd_fit, self.fm)
         self.std_fit = np.nanstd(self.df_f_fit)
-        if self.trimmed:
-            self.df_f2 = self.comp_df_f(self.fd2, self.fm2)
-            self.std2 = np.nanstd(self.df_f2)
-            self.fd2_fit, self.popt2 = self.fit(self.fd2, self.fm2)
-            self.df_f2_fit = self.comp_df_f(self.fd2_fit, self.fm2)
-            self.std2_fit = np.nanstd(self.df_f2_fit)
+
+    def remap(self, ids):
+        arr = np.loadtxt(self.file, skiprows=1, delimiter=',', unpack=True)
+        arr[6:, ids] = np.nan
+        self.initialize(arr)
+
 
     def make_map(self, M, N):
         """
@@ -62,7 +58,81 @@ class Mapping:
         return df_f
     
     def fit(self, design, meas):
-        popt, pcov = curve_fit(func, design[~self.nanmask], meas[~self.nanmask])
+        nanmask = np.isnan(meas)
+        popt, pcov = curve_fit(func, design[~nanmask], meas[~nanmask])
         design_fit = func(design, *popt)
         return design_fit, popt
+
     
+    def plot(self):
+            fig, axes = plt.subplot_mosaic('abcd', constrained_layout=True, figsize=(13,3))
+            ax = axes['a']
+            ax.scatter(self.fd, self.fd, label='Design: $f_0^d$')
+            ax.scatter(self.fd, self.fm, label='Measured: $f_0^m$')
+            x = np.linspace(np.amin(self.fd), np.amax(self.fd), 100)
+            ax.plot(x, func(x, *self.popt), label='Corr. design: $f_0^{d^*}$', c='k', ls='--')
+            ax.legend()
+            min = np.nanmin((self.fd, self.fm))-.1
+            max = np.nanmax((self.fd, self.fm))+.1
+            xlim = [np.floor(min * 2) / 2, np.ceil(max * 2) / 2]
+            ylim = xlim
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            ax.set_xlabel('Frequency [GHz]')
+            ax.set_ylabel('Frequency [GHz]')
+            ax.set_yticks(ax.get_xticks())
+            ax = axes['b']
+            ax.hist(self.df_f_fit, bins='auto', label='$\sigma_f=%.1e$' % self.std_fit, facecolor='o')
+            ax.legend()
+            max = np.ceil(3/np.nanmax(self.df_f_fit))
+            cmin = np.floor(np.nanmin(self.df_f_fit) * max) / max
+            cmax = np.ceil(np.nanmax(self.df_f_fit) * max) / max
+            ax.set_xlim([cmin, cmax])
+            ax.legend()
+            ax.set_xlabel('Frac. freq. error')
+            ax.set_ylabel('Counts')
+            ax = axes['c']
+            ax.scatter(self.fd, self.df_f_fit, c=self.df_f_fit, cmap='viridis', vmin=cmin, vmax=cmax, label='$\delta f/f$')
+            ax.set_xlim(xlim)
+            ax.set_ylim([cmin, cmax])
+            ax.set_xlabel('Frequency [GHz]')
+            ax.set_ylabel('Frac. freq. error')
+            ax = axes['d']
+            im = ax.imshow(self.df_f_fit[self.map], origin='lower', vmin=cmin, vmax=cmax)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_xlim(-.5, self.N-.5)
+            ax.set_ylim(-.5, self.M-.5)
+            ax.grid(False, which='both')
+            ax.set_xlabel('$x$ $[px]$')
+            ax.set_ylabel('$y$ $[px]$')
+            cbar = fig.colorbar(im, ax=ax)
+            _ = cbar.ax.set_ylabel('$(f_0^m - f_0^{d^*})/f_0^{d^*}$')
+    
+
+class TrimmedMapping(Mapping):
+    """
+    TrimmedMapping class for handling trimmed data.
+    """
+
+    def __init__(self, file):
+        super().__init__(file)
+        arr = np.loadtxt(file, skiprows=1, delimiter=',', unpack=True)
+        self.trimitialize(arr)
+    
+    def trimitialize(self, arr):
+        self.fd = arr[7]
+        self.Lf = arr[8]
+        self.fm = arr[9]
+        self.df_f = self.comp_df_f(self.fd, self.fm)
+        self.std = np.nanstd(self.df_f)
+        self.fd_fit, self.popt = self.fit(self.fd, self.fm)
+        self.df_f_fit = self.comp_df_f(self.fd_fit, self.fm)
+        self.std_fit = np.nanstd(self.df_f_fit)
+
+    def remap(self, ids):
+        arr = np.loadtxt(self.file, skiprows=1, delimiter=',', unpack=True)
+        arr[7:, ids] = np.nan
+        self.trimitialize(arr)

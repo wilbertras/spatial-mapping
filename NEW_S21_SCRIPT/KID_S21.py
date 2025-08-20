@@ -1,4 +1,5 @@
 import numpy as np
+import natsort
 import glob
 import pandas as pd
 import re
@@ -26,7 +27,7 @@ def create_result_pd():
                                        "Pint"])
     return df_results
     
-def add_result(df_results, kid, power, temperature, fit_result, Pint):
+def add_result(df_results, kid, power, temperature, fit_result, Pint, phi):
     
     new_entry = pd.DataFrame({"KID": [kid], "Power": [power], "Temperature": [temperature],
                               "f0": [fit_result.params['f0'].value],
@@ -38,7 +39,8 @@ def add_result(df_results, kid, power, temperature, fit_result, Pint):
                               "Qi": [fit_result.params['Qi'].value],
                               "Qi_std": [fit_result.params['Qi'].stderr],
                               "Pint": [Pint],
-                              "redchisqr": [fit_result.redchi]})
+                              "redchisqr": [fit_result.redchi],
+                              "phi": [phi]})
     
     df_results = pd.concat([df_results, new_entry], ignore_index=True)
     
@@ -47,7 +49,7 @@ def add_result(df_results, kid, power, temperature, fit_result, Pint):
 def find_S21_files(path, kid='', pread=''):
 
     string = path + 'KID%s_%sdBm*.dat' % (kid,pread)    
-    files = sorted(glob.glob(string)) # a sorted lis of filenames in path
+    files = natsort.natsorted(glob.glob(string)) # a sorted lis of filenames in path
     nr_files = len(files)
     
     kid = []
@@ -71,7 +73,6 @@ def loop_over_S21_files(path, kid=None, pread=None, plot=False):
         pread = str(pread)
 
     filenames, kids = find_S21_files(path, kid, pread)
-    
     # output_dir = "temperature_data"
     # os.makedirs(output_dir, exist_ok=True)
     
@@ -110,8 +111,9 @@ def loop_over_S21_files(path, kid=None, pread=None, plot=False):
                         fig, ax = plt.subplots()
                         result.plot_fit(ax)
                 Pint = def_Pint(result.params['Ql'].value, result.params['Qc_re'].value, Pread)
+                phi = np.arctan(2*result.params['Ql'].value*result.params['dw']/result.params['f0'].value)
                 
-                df_results = add_result(df_results, kid_id, Pread, temperature, result, Pint)
+                df_results = add_result(df_results, kid_id, Pread, temperature, result, Pint, phi)
                 
                 df['Mag'] = 10**((s21_values - np.mean(s21_values[0:100]))/20)
                 df['Fit'] = S21_fit_line

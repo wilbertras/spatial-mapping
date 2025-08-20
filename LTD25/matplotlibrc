@@ -1,9 +1,9 @@
 #Author: Cameron Davidson-Pilon, original styles from Bayesian Methods for Hackers
 # https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/
 # font.family : serif
+font.family: Verdana
 font.serif : Computer Modern Roman
 font.size: 14 # small=10, medium=12, large=14, x-large=16
-
 lines.linewidth : 1.0
 
 patch.linewidth: 0.5
