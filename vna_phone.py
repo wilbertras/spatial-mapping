@@ -26,6 +26,7 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
+steps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3]   
 
 
 try:
@@ -118,14 +119,13 @@ step = 1
 ## Initiate scanning paramaters
 running = 1
 nr_s21 = 0
-nr_x_scanned = 0
-nr_y_scanned = 0
+nr_scan = 0
 w = w_init
 x = x_init
 y = y_init
 dx = dx_init
 dy = dy_init
-nr_scans = 0
+nr_steps = len(steps)
 restart = 1
 inverted = 0
 green = 1
@@ -138,10 +138,10 @@ square = 0
 scanline = False
 scancolor = 0
 datadir = None
-steps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3]   
+
 # ## Test connection to Virtual Intstruments
-vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -151,7 +151,7 @@ while running:
 
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
-    '#X_scans, #Y_scans = ' + str(nr_x_scanned) + ', ' + str(nr_y_scanned),
+    '# scans = ' + str(nr_scan),
     'dX = ' + str(dx) + '\n -1/=1/+1 = Z/X/C',
     'dY = ' + str(dy) + '\n -1/=1/+1 = T/Y/U',
     'w = ' + str(w) + '\n -1/=1/+1 = Q/W/E',
@@ -165,25 +165,22 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        if nr_y_scanned == 0:
-            device.shell("input keyevent KEYCODE_B")
+        while nr_scan < nr_steps:
+            step = steps[nr_scan]
+            print('Scan %d/%d, stepping %d' % (nr_scan+1, nr_steps, step))
+            for i in range(step):
+                device.shell("input keyevent KEYCODE_DPAD_UP")
+                pygame.time.wait(wait)
+                y += 1
+            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            # name = '%s/S21_y%02d.npy' % (datadir, nr_scan)
+            # np.save(name, np.stack((freqs, s21), axis=-1).T)
+            nr_scan += 1
+        else:
+            measure = 0
+            print('Helemaal f*cking klaar met de meting')
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
-            for step in steps:
-                print('stepping ', step)
-                for i in range(step):
-                    device.shell("input keyevent KEYCODE_DPAD_UP")
-                    pygame.time.wait(wait)
-                    y += 1
-                freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                name = '%s/S21_x%dy%d.npy' % (datadir, nr_y_scanned+1, 0)
-                np.save(name, np.stack((freqs, s21), axis=-1).T)
-                nr_y_scanned += 1
-                print('scanning: ', nr_y_scanned+1, '/', len(steps))
-        measure = 0
-        print('Helemaal f*cking klaar met de meting')
-        device.shell("input keyevent KEYCODE_B")
-        pygame.time.wait(wait)
 
     event = pygame.event.poll()
 
@@ -325,14 +322,11 @@ while running:
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
-                print('steps: ', steps)
-                # print('x0=', x)
-                # backtrack = sum(steps)
-                # print('backtracking ', backtrack)
-                # for i in range(backtrack):
-                #     device.shell("input keyevent KEYCODE_DPAD_LEFT")
-                #     pygame.time.wait(wait)
-                #     x -= 1
+                measure = 1
+
+                print('# steps: ', steps)
+                print('linewidth: ', w)
+                print('color: ', w)
                 maindir = f.select_directory()
                 if maindir:
                     print(f"Selected directory: {maindir}")
@@ -353,13 +347,18 @@ while running:
                 # Make dark scan and save it
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                # np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
                 print('Saved: %s' % darkname)
+                
                 fig, ax = plt.subplots()
-                ax.plot(freqs, dark_s21)
+                # ax.plot(freqs, dark_s21)
                 plt.show()
-                measure = 1
+                
+                device.shell("input keyevent KEYCODE_B")
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+
     pygame.display.flip()
 pygame.quit()
 sys.exit()
