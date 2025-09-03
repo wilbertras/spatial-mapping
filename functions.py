@@ -243,7 +243,7 @@ def timestamp():
     day = datetime.now().day
     hour = datetime.now().hour
     minute = datetime.now().minute
-    return '_%d%d%d_%dh%d' % (year, month, day, hour, minute)
+    return '_%d%02d%02d_%02dh%02d' % (year, month, day, hour, minute)
 
 
 def create_directory(base_name):

@@ -1,5 +1,6 @@
 from ppadb.client import Client as AdbClient
 import pygame
+import time
 import functions as f
 import numpy as np
 from datetime import datetime
@@ -13,10 +14,10 @@ from tkinter import filedialog
 
 
 ## Input S21 parameters
-fstart = 5.1 # GHz
-fstop = 7.1  # GHz
+fstart = 4 # GHz
+fstop = 8.3  # GHz
 totscanbw = fstop - fstart
-num_points = 3201
+num_points = 6401
 subscanbw = 100  # MHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
@@ -26,7 +27,7 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
-steps = [0, 3, 3, 3]   
+steps = [0] + 31 * [3]   
 
 
 try:
@@ -50,7 +51,7 @@ blue = (0, 0, 255)
 white = (255, 255, 255)
 black = (0, 0, 0)
 colorkeys = ['white', 'blue', 'green', 'red']
-colorvalues = [white, blue, green red]
+colorvalues = [white, blue, green, red]
 colors = dict(zip(colorkeys, colorvalues))
 nr_colors = len(colors)
 color_cycler = 0
@@ -142,8 +143,8 @@ scancolor = 0
 datadir = None
 
 # ## Test connection to Virtual Intstruments
-# vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-# weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
 
 while running:
     if restart:
@@ -174,9 +175,9 @@ while running:
                 device.shell("input keyevent KEYCODE_DPAD_UP")
                 pygame.time.wait(wait)
                 y += 1
-            # freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            # name = '%s/S21_y%02d.npy' % (datadir, nr_scan)
-            # np.save(name, np.stack((freqs, s21), axis=-1).T)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            name = '%s/S21_y%02d.npy' % (datadir, nr_scan)
+            np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_scan += 1
         else:
             measure = 0
@@ -328,7 +329,7 @@ while running:
 
                 print('# steps: ', steps)
                 print('linewidth: ', w)
-                print('color: ', w)
+                print('color: ', colorkeys[color_cycler % nr_colors])
                 maindir = f.select_directory()
                 if maindir:
                     print(f"Selected directory: {maindir}")
@@ -349,12 +350,17 @@ while running:
                 # Make dark scan and save it
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                # np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                st = time.time()
+                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+                et = time.time()
+                scan_time = et - st
+                print('Time 1 scan = %d seconds' % scan_time)
+                print('Expected duration measurement: %d minutes' % (nr_steps * scan_time / 60))
+                np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
                 print('Saved: %s' % darkname)
                 
                 fig, ax = plt.subplots()
-                # ax.plot(freqs, dark_s21)
+                ax.plot(freqs, dark_s21)
                 plt.show()
                 
                 device.shell("input keyevent KEYCODE_B")
