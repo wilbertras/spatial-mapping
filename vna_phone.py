@@ -26,7 +26,7 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
-steps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3]   
+steps = [0, 3, 3, 3]   
 
 
 try:
@@ -44,12 +44,14 @@ print(f'Connected to {device}')
 
 # Constants
 pygame.init()
-red = 255, 0, 0
-green = 0, 255, 0
-blue = 0, 0, 255
-white = 255, 255, 255
-black = 0, 0, 0
-colors = [white, blue, green, red]
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+white = (255, 255, 255)
+black = (0, 0, 0)
+colorkeys = ['white', 'blue', 'green', 'red']
+colorvalues = [white, blue, green red]
+colors = dict(zip(colorkeys, colorvalues))
 nr_colors = len(colors)
 color_cycler = 0
 width, height = 600, 500
@@ -165,7 +167,7 @@ while running:
     draw_text_boxes(text_list, bgcolor, linecolor)
     
     if measure:
-        while nr_scan < nr_steps:
+        if nr_scan < nr_steps:
             step = steps[nr_scan]
             print('Scan %d/%d, stepping %d' % (nr_scan+1, nr_steps, step))
             for i in range(step):
@@ -287,13 +289,13 @@ while running:
             pygame.time.wait(wait)
             if inverted:
                 color_cycler += 1
-                bgcolor = colors[color_cycler % nr_colors]
+                bgcolor = colorvalues[color_cycler % nr_colors]
                 linecolor = black
                 axcolor = linecolor
             else:
                 color_cycler += 1
                 bgcolor = black
-                linecolor = colors[color_cycler % nr_colors]
+                linecolor = colorvalues[color_cycler % nr_colors]
                 axcolor = linecolor
         if event.key == pygame.K_b:
             if not square:
@@ -317,7 +319,7 @@ while running:
                 print(f"Selected directory: {datadir}")
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             date = f.timestamp()
-            c = colors[color_cycler % nr_colors]
+            c = colorvalues[color_cycler % nr_colors]
             name = '%s/S21_x%dy%d_w%d.npy' % (datadir, x, y, w)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
@@ -338,7 +340,7 @@ while running:
                 freqsname = '%s/freqs.npy' % (datadir)
                 darkname = '%s/S21_dark.npy' % (datadir)
                 settingsname = '%s/settings.txt' % (datadir)
-                dict = {'color':colors[color_cycler % nr_colors], 'width':w,
+                dict = {'color': colorkeys[color_cycler % nr_colors], 'width':w,
                         'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
                         'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
                 with open(settingsname, 'w') as file:
