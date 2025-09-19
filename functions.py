@@ -24,7 +24,8 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KI
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
-    # init_vna(vna, calibfile=calfile)
+    if calfile and calfile != '':
+        init_vna(vna, calibfile=calfile)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
