@@ -14,7 +14,7 @@ import os
 
 ## Input S21 parameters
 fstart = 4 # GHz
-fstop = 8.3  # GHz
+fstop = 8.2  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 100  # MHz
@@ -26,8 +26,11 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
+calibfile = ''
 xsteps = []   
-ysteps = []  
+ysteps =[0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]  
+xstart = 532
+ystart = 1097
 
 
 try:
@@ -53,7 +56,7 @@ colors = {
     'black': (0, 0, 0)
 }
 colorkeys = ['white', 'blue', 'green', 'red']
-colorkey_cycler = itertools.cycler(colorkeys)
+colorkey_cycler = itertools.cycle(colorkeys)
 linecolor = next(colorkey_cycler)
 bgcolor = 'black'
 
@@ -131,14 +134,14 @@ dx = dx_init
 dy = dy_init
 restart = True
 false_true = [False, True]
-inverted_cycler = itertools.cycler(false_true)
+inverted_cycler = itertools.cycle(false_true)
 inverted = next(inverted_cycler)
 measure = False
 wait = 1
 linetypes = ['both', 'none', 'x', 'y']
-linectype_cycler = itertools.cycle(linetypes)
-linetype = next(linectype_cycler)
-square_cycler = itertools.cycler(false_true)
+linetype_cycler = itertools.cycle(linetypes)
+linetype = next(linetype_cycler)
+square_cycler = itertools.cycle(false_true)
 square = next(square_cycler)
 scanline = False
 datadir = None
@@ -182,7 +185,7 @@ while running:
                 device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                 pygame.time.wait(wait)
                 x += 1
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
             name = '%s/S21_x%02d.npy' % (datadir, nr_xscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_xscanned += 1
@@ -196,7 +199,7 @@ while running:
                 device.shell("input keyevent KEYCODE_DPAD_UP")
                 pygame.time.wait(wait)
                 y += 1
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
             name = '%s/S21_y%02d.npy' % (datadir, nr_yscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_yscanned += 1
@@ -226,40 +229,46 @@ while running:
             w = w_init
             dx = w_init
             dy = w_init
-            colorkey_cycler = itertools.cycler(colorkeys)
+            xsteps = []
+            ysteps = []
+            colorkey_cycler = itertools.cycle(colorkeys)
             bgcolor = 'black'
             linecolor = next(colorkey_cycler)
             linetype_cycler = itertools.cycle(linetypes)
             linetype = next(linetype_cycler)
-            inverted_cycler = itertools.cycler(false_true)
+            inverted_cycler = itertools.cycle(false_true)
             inverted = next(inverted_cycler)
-            square_cycler = itertools.cycler(false_true)
+            square_cycler = itertools.cycle(false_true)
             square = next(square_cycler)
 
         if event.key == pygame.K_DOWN:
-            device.shell("input keyevent KEYCODE_DPAD_DOWN")
-            pygame.time.wait(wait)
-            y -= dy
-            if y < y_min:
-                y = y_min
+            if linetype == 'y' or linetype == 'both':
+                device.shell("input keyevent KEYCODE_DPAD_DOWN")
+                pygame.time.wait(wait)
+                y -= dy
+                if y < y_min:
+                    y = y_min
         if event.key == pygame.K_UP:
-            device.shell("input keyevent KEYCODE_DPAD_UP")
-            pygame.time.wait(wait)
-            y += dy
-            if y > y_max:
-                y = y_max
+            if linetype == 'y' or linetype == 'both':
+                device.shell("input keyevent KEYCODE_DPAD_UP")
+                pygame.time.wait(wait)
+                y += dy
+                if y > y_max:
+                    y = y_max
         if event.key == pygame.K_RIGHT:
-            device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-            pygame.time.wait(wait)
-            x += dx
-            if x > x_max:
-                x = x_max
+            if linetype == 'x' or linetype == 'both':
+                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                pygame.time.wait(wait)
+                x += dx
+                if x > x_max:
+                    x = x_max
         if event.key == pygame.K_LEFT:
-            device.shell("input keyevent KEYCODE_DPAD_LEFT")
-            pygame.time.wait(wait)
-            x -= dx
-            if x < x_min:
-                x = x_min
+            if linetype == 'x' or linetype == 'both':
+                device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                pygame.time.wait(wait)
+                x -= dx
+                if x < x_min:
+                    x = x_min
         if event.key == pygame.K_e:
             device.shell("input keyevent KEYCODE_E")
             pygame.time.wait(wait)
@@ -323,24 +332,30 @@ while running:
             if not square:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                linetype = next(linectype_cycler)
+                linetype = next(linetype_cycler)
         if event.key == pygame.K_l:
             if linetype == 'x':
                 if not len(xsteps):
                     xsteps.append(0)
                     xstart = copy(int(x))
+                    xprev = copy(int(x))
+                    print('Start X: ', xstart)
                 else:
-                    xsteps.append(int(x - xstart))
-                    xstart = copy(x)
+                    if int(x - xprev):
+                        xsteps.append(int(x - xprev))
+                        xprev = copy(x)
             elif linetype == 'y':
                 if not len(ysteps):
                     ysteps.append(0)
                     ystart = copy(int(y))
+                    yprev = copy(int(y))
+                    print('Start Y: ', ystart)
                 else:
-                    ysteps.append(int(y - ystart))
-                    ystart = copy(y)
-                print('Stpes in X: ', xsteps)
-                print('steps in Y: ', ysteps)
+                    if int(y - yprev):
+                        ysteps.append(int(y - yprev))
+                        yprev = copy(y)
+            print('Stpes in X: ', xsteps)
+            print('steps in Y: ', ysteps)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             pygame.time.wait(wait)
@@ -349,50 +364,70 @@ while running:
             datadir = f.select_directory(initial_dir=datadir)
             if datadir:
                 print(f"Selected directory: {datadir}")
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
             date = f.timestamp()
             name = '%s/S21_x%dy%d_w%d.npy' % (datadir, x, y, w)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
-                measure = 1
+                if inverted:
+                    print('WARNING: screen is inverted')
+                else:
+                    measure = 1
+                    nr_y2scan = len(ysteps)
+                    nr_x2scan = len(xsteps)
+                    while linetype != 'both':
+                        device.shell("input keyevent KEYCODE_B")
+                        linetype = next(linetype_cycler)
+                    device.shell("input keyevent KEYCODE_X")
+                    dx = 1
+                    device.shell("input keyevent KEYCODE_Y")
+                    dy = 1
+                    while x > xstart:
+                        device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                        x -= dx
+                    while y > ystart:
+                        device.shell("input keyevent KEYCODE_DPAD_DOWN")
+                        y -= dy
+                    
+                    print('Start X: ', xstart)
+                    print('Start Y: ', ystart)
+                    print('# steps in X: ', nr_x2scan)
+                    print('# steps in Y: ', nr_y2scan)
+                    print('linewidth: ', w)
+                    print('color: ', linecolor)
+                    maindir = f.select_directory()
+                    if maindir:
+                        print(f"Selected directory: {maindir}")
+                    date = f.timestamp()
+                    datadir = maindir + '/S21s' + date
+                    f.create_directory(datadir)
+                    
+                    # Initiate array
+                    freqsname = '%s/freqs.npy' % (datadir)
+                    darkname = '%s/S21_dark.npy' % (datadir)
+                    settingsname = '%s/settings.txt' % (datadir)
+                    dict = {'color': linecolor, 'width':w,
+                            'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                            'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
+                    with open(settingsname, 'w') as file:
+                        json.dump(dict, file)
 
-                print('# steps in X: ', nr_x2scan)
-                print('# steps in Y: ', nr_y2scan)
-                print('linewidth: ', w)
-                print('color: ', linecolor)
-                maindir = f.select_directory()
-                if maindir:
-                    print(f"Selected directory: {maindir}")
-                date = f.timestamp()
-                datadir = maindir + '/S21s' + date
-                f.create_directory(datadir)
-                
-                # Initiate array
-                freqsname = '%s/freqs.npy' % (datadir)
-                darkname = '%s/S21_dark.npy' % (datadir)
-                settingsname = '%s/settings.txt' % (datadir)
-                dict = {'color': linecolor, 'width':w,
-                        'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                        'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
-                with open(settingsname, 'w') as file:
-                    json.dump(dict, file)
-
-                # Make dark scan and save it
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
-                st = time.time()
-                freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-                et = time.time()
-                scan_time = et - st
-                print('Time 1 scan = %d seconds' % scan_time)
-                print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
-                np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
-                print('Saved: %s' % darkname)
-                
-                fig, ax = plt.subplots()
-                ax.plot(freqs, dark_s21)
-                plt.show()
+                    # Make dark scan and save it
+                    device.shell("input keyevent KEYCODE_B")
+                    pygame.time.wait(wait)
+                    st = time.time()
+                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                    et = time.time()
+                    scan_time = et - st
+                    print('Time 1 scan = %d seconds' % scan_time)
+                    print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
+                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                    print('Saved: %s' % darkname)
+                    
+                    fig, ax = plt.subplots()
+                    ax.plot(freqs, dark_s21)
+                    plt.show()
     pygame.display.flip()
 pygame.quit()
 sys.exit()
