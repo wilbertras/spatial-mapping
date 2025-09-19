@@ -175,10 +175,10 @@ while running:
     draw_text_boxes(text_list, colors[bgcolor], colors[linecolor])
     
     if measure:
-        if nr_xscanned < nr_x2scan:
-            if nr_xscanned == 0:
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
+        if nr_xscanned == 0 and nr_yscanned == 0:
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
+        if nr_xscanned < nr_x2scan and nr_x2scan > 0 and nr_yscanned == 0:
             xstep = xsteps[nr_xscanned]
             print('Scan %d/%d, stepping %d' % (nr_xscanned+1, nr_x2scan, xstep))
             for i in range(xstep):
@@ -189,10 +189,10 @@ while running:
             name = '%s/S21_x%02d.npy' % (datadir, nr_xscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_xscanned += 1
-        elif nr_yscanned < nr_y2scan and nr_xscanned == nr_x2scan:
-            if nr_yscanned == 0:
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
+        if nr_xscanned == nr_x2scan and nr_yscanned == 0:
+            device.shell("input keyevent KEYCODE_B")
+            pygame.time.wait(wait)
+        if nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
             ystep = ysteps[nr_yscanned]
             print('Scan %d/%d, stepping %d' % (nr_yscanned+1, nr_y2scan, ystep))
             for i in range(ystep):
@@ -203,7 +203,7 @@ while running:
             name = '%s/S21_y%02d.npy' % (datadir, nr_yscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_yscanned += 1
-        elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
+        if nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
             measure = 0
             print('Helemaal f*cking klaar met de meting')
             device.shell("input keyevent KEYCODE_B")
@@ -374,8 +374,10 @@ while running:
                     print('WARNING: screen is inverted')
                 else:
                     measure = 1
-                    nr_y2scan = len(ysteps)
                     nr_x2scan = len(xsteps)
+                    nr_y2scan = len(ysteps)
+                    nr_xscanned = 0
+                    nr_yscanned = 0
                     while linetype != 'both':
                         device.shell("input keyevent KEYCODE_B")
                         linetype = next(linetype_cycler)

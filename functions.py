@@ -24,8 +24,10 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KI
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
-    if calfile and calfile != '':
-        init_vna(vna, calibfile=calfile)
+    if not calfile or calfile != '':
+        init_vna(vna, calibfile='D:\KIDS\VNA_through_donottouch.csa')
+    else:
+        init_vna(vna)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
@@ -74,7 +76,7 @@ def connect2vi(VISA, timeout=300000):
     return vi
 
 
-def calibrate_vna(vna,  calibfile='D:\KIDS\KIDs.csa'):
+def calibrate_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
     try:
         vna.write('SENS:CORR:COLL:FULL')   # Start een volledige 2-poorts kalibratie
         vna.query('*OPC?')                 # Blokkeer totdat kalibratie voltooid is
