@@ -1,16 +1,15 @@
 from ppadb.client import Client as AdbClient
+import matplotlib.pyplot as plt
+from datetime import datetime
+import functions as f
+from copy import copy
+import numpy as np
+import itertools
 import pygame
 import time
-import functions as f
-import numpy as np
-from datetime import datetime
-import os
-import matplotlib.pyplot as plt
-import sys
 import json
-from copy import copy
-import tkinter as tk
-from tkinter import filedialog
+import sys
+import os
 
 
 ## Input S21 parameters
@@ -27,7 +26,8 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
-steps = [0] + 31 * [3]   
+xsteps = []   
+ysteps = []  
 
 
 try:
@@ -45,20 +45,19 @@ print(f'Connected to {device}')
 
 # Constants
 pygame.init()
-red = (255, 0, 0)
-green = (0, 255, 0)
-blue = (0, 0, 255)
-white = (255, 255, 255)
-black = (0, 0, 0)
+colors = {
+    'white': (255, 255, 255),
+    'blue': (0, 0, 255),
+    'green': (0, 255, 0),
+    'red': (255, 0, 0),
+    'black': (0, 0, 0)
+}
 colorkeys = ['white', 'blue', 'green', 'red']
-colorvalues = [white, blue, green, red]
-colors = dict(zip(colorkeys, colorvalues))
-nr_colors = len(colors)
-color_cycler = 0
+colorkey_cycler = itertools.cycler(colorkeys)
+linecolor = next(colorkey_cycler)
+bgcolor = 'black'
+
 width, height = 600, 500
-bgcolor = black
-linecolor = white
-axcolor = white
 column_width = width // 2
 small_box_height = height // 8
 big_box_height = height // 2
@@ -120,31 +119,36 @@ w_min = 1
 step = 1
 
 ## Initiate scanning paramaters
-running = 1
-nr_s21 = 0
-nr_scan = 0
+running = True
+nr_y2scan = len(ysteps)
+nr_x2scan = len(xsteps)
+nr_xscanned = 0
+nr_yscanned = 0
 w = w_init
 x = x_init
 y = y_init
 dx = dx_init
 dy = dy_init
-nr_steps = len(steps)
-restart = 1
-inverted = 0
-green = 1
-nr_x_scans = 0
-nr_y_scans = 0
-measure = 0
+restart = True
+false_true = [False, True]
+inverted_cycler = itertools.cycler(false_true)
+inverted = next(inverted_cycler)
+measure = False
 wait = 1
-dark = 0
-square = 0
+linetypes = ['both', 'none', 'x', 'y']
+linectype_cycler = itertools.cycle(linetypes)
+linetype = next(linectype_cycler)
+square_cycler = itertools.cycler(false_true)
+square = next(square_cycler)
 scanline = False
-scancolor = 0
 datadir = None
 
 # ## Test connection to Virtual Intstruments
-vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
-weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+try:
+    vna = f.connect2vi("GPIB0::16::INSTR", timeout=3000000)
+    weinschell = f.connect2vi("GPIB0::10::INSTR", timeout=300000)
+except:
+    print('No VNA connected')
 
 while running:
     if restart:
@@ -154,36 +158,57 @@ while running:
 
     text_list = [
     'X, Y = ' + str(x) + ', ' + str(y) + '\n Move = up,down,left,right',
-    '# scans = ' + str(nr_scan),
+    '# scans = ' + str(nr_yscanned + nr_xscanned),
     'dX = ' + str(dx) + '\n -1/=1/+1 = Z/X/C',
     'dY = ' + str(dy) + '\n -1/=1/+1 = T/Y/U',
     'w = ' + str(w) + '\n -1/=1/+1 = Q/W/E',
-    '# scans = ' + str(nr_s21) + '\n Make scan = Enter',
+    '# steps = ' + str(len(xsteps)) + ', ' + str(len(ysteps)) + '\n add step = L',
     'invert screen = I',
     'Change color = G \nCycles White-Blue-Green-Red-Off',
     'reset lines = Backspace',
     'quit and save = Esc',
     ]
-    screen.fill(bgcolor)
-    draw_text_boxes(text_list, bgcolor, linecolor)
+    screen.fill(colors[bgcolor])
+    draw_text_boxes(text_list, colors[bgcolor], colors[linecolor])
     
     if measure:
-        if nr_scan < nr_steps:
-            step = steps[nr_scan]
-            print('Scan %d/%d, stepping %d' % (nr_scan+1, nr_steps, step))
-            for i in range(step):
+        if nr_xscanned < nr_x2scan:
+            if nr_xscanned == 0:
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+            xstep = xsteps[nr_xscanned]
+            print('Scan %d/%d, stepping %d' % (nr_xscanned+1, nr_x2scan, xstep))
+            for i in range(xstep):
+                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                pygame.time.wait(wait)
+                x += 1
+            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
+            name = '%s/S21_x%02d.npy' % (datadir, nr_xscanned)
+            np.save(name, np.stack((freqs, s21), axis=-1).T)
+            nr_xscanned += 1
+        elif nr_yscanned < nr_y2scan and nr_xscanned == nr_x2scan:
+            if nr_yscanned == 0:
+                device.shell("input keyevent KEYCODE_B")
+                pygame.time.wait(wait)
+            ystep = ysteps[nr_yscanned]
+            print('Scan %d/%d, stepping %d' % (nr_yscanned+1, nr_y2scan, ystep))
+            for i in range(ystep):
                 device.shell("input keyevent KEYCODE_DPAD_UP")
                 pygame.time.wait(wait)
                 y += 1
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
-            name = '%s/S21_y%02d.npy' % (datadir, nr_scan)
+            name = '%s/S21_y%02d.npy' % (datadir, nr_yscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
-            nr_scan += 1
-        else:
+            nr_yscanned += 1
+        elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
             measure = 0
             print('Helemaal f*cking klaar met de meting')
             device.shell("input keyevent KEYCODE_B")
             pygame.time.wait(wait)
+        else:
+            measure = 0
+            device.shell("input keyevent KEYCODE_B")
+            print('WARNING: Measurement stopped but might not be complete')
 
     event = pygame.event.poll()
 
@@ -201,14 +226,15 @@ while running:
             w = w_init
             dx = w_init
             dy = w_init
-            bgcolor = black
-            linecolor = white
-            axcolor = white
-            nr_s21 = 0
-            color_cycler = 0
-            dark = 0
-            inverted = 0
-            square = 0
+            colorkey_cycler = itertools.cycler(colorkeys)
+            bgcolor = 'black'
+            linecolor = next(colorkey_cycler)
+            linetype_cycler = itertools.cycle(linetypes)
+            linetype = next(linetype_cycler)
+            inverted_cycler = itertools.cycler(false_true)
+            inverted = next(inverted_cycler)
+            square_cycler = itertools.cycler(false_true)
+            square = next(square_cycler)
 
         if event.key == pygame.K_DOWN:
             device.shell("input keyevent KEYCODE_DPAD_DOWN")
@@ -283,53 +309,58 @@ while running:
             current_bgcolor = copy(bgcolor)
             bgcolor = current_linecolor
             linecolor = current_bgcolor
-            axcolor = current_bgcolor
-            inverted = (inverted + 1) % 2
+            inverted = next(inverted_cycler)
         if event.key == pygame.K_g:
             device.shell("input keyevent KEYCODE_G")
             pygame.time.wait(wait)
             if inverted:
-                color_cycler += 1
-                bgcolor = colorvalues[color_cycler % nr_colors]
-                linecolor = black
-                axcolor = linecolor
+                bgcolor = next(colorkey_cycler)
+                linecolor = 'black'
             else:
-                color_cycler += 1
-                bgcolor = black
-                linecolor = colorvalues[color_cycler % nr_colors]
-                axcolor = linecolor
+                bgcolor = 'black'
+                linecolor = next(colorkey_cycler)
         if event.key == pygame.K_b:
             if not square:
                 device.shell("input keyevent KEYCODE_B")
                 pygame.time.wait(wait)
-                dark = (dark + 1) % 4
+                linetype = next(linectype_cycler)
         if event.key == pygame.K_l:
-            if not len(steps):
-                steps.append(0)
-                start = copy(int(x))
-            else:
-                steps.append(int(x - start))
-                start = copy(x)
+            if linetype == 'x':
+                if not len(xsteps):
+                    xsteps.append(0)
+                    xstart = copy(int(x))
+                else:
+                    xsteps.append(int(x - xstart))
+                    xstart = copy(x)
+            elif linetype == 'y':
+                if not len(ysteps):
+                    ysteps.append(0)
+                    ystart = copy(int(y))
+                else:
+                    ysteps.append(int(y - ystart))
+                    ystart = copy(y)
+                print('Stpes in X: ', xsteps)
+                print('steps in Y: ', ysteps)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             pygame.time.wait(wait)
-            square = (square + 1) % 2
+            square = next(square_cycler)
         if event.key == pygame.K_m:
             datadir = f.select_directory(initial_dir=datadir)
             if datadir:
                 print(f"Selected directory: {datadir}")
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw)
             date = f.timestamp()
-            c = colorvalues[color_cycler % nr_colors]
             name = '%s/S21_x%dy%d_w%d.npy' % (datadir, x, y, w)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             print('Saved: %s' % (name))
         if event.key == pygame.K_RETURN:
                 measure = 1
 
-                print('# steps: ', steps)
+                print('# steps in X: ', nr_x2scan)
+                print('# steps in Y: ', nr_y2scan)
                 print('linewidth: ', w)
-                print('color: ', colorkeys[color_cycler % nr_colors])
+                print('color: ', linecolor)
                 maindir = f.select_directory()
                 if maindir:
                     print(f"Selected directory: {maindir}")
@@ -341,7 +372,7 @@ while running:
                 freqsname = '%s/freqs.npy' % (datadir)
                 darkname = '%s/S21_dark.npy' % (datadir)
                 settingsname = '%s/settings.txt' % (datadir)
-                dict = {'color': colorkeys[color_cycler % nr_colors], 'width':w,
+                dict = {'color': linecolor, 'width':w,
                         'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
                         'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
                 with open(settingsname, 'w') as file:
@@ -355,18 +386,13 @@ while running:
                 et = time.time()
                 scan_time = et - st
                 print('Time 1 scan = %d seconds' % scan_time)
-                print('Expected duration measurement: %d minutes' % (nr_steps * scan_time / 60))
+                print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
                 np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
                 print('Saved: %s' % darkname)
                 
                 fig, ax = plt.subplots()
                 ax.plot(freqs, dark_s21)
                 plt.show()
-                
-                device.shell("input keyevent KEYCODE_B")
-                device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
-
     pygame.display.flip()
 pygame.quit()
 sys.exit()
