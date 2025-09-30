@@ -26,10 +26,10 @@ kidpower = -110 # dBm
 ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
-calibfile = ''
-xsteps = []   
-ysteps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 4]  
-xstart = 535
+calibfile = True
+xsteps = [0]  
+ysteps = []   
+xstart = 628
 ystart = 1097
 
 
@@ -412,7 +412,7 @@ while running:
                     
                     # Initiate array
                     freqsname = '%s/freqs.npy' % (datadir)
-                    darkname = '%s/S21_dark.npy' % (datadir)
+                    darkname = '%s/S21_darkX.npy' % (datadir)
                     settingsname = '%s/settings.txt' % (datadir)
                     dict = {'color': linecolor, 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
@@ -420,7 +420,7 @@ while running:
                     with open(settingsname, 'w') as file:
                         json.dump(dict, file)
 
-                    # Make dark scan and save it
+                    # # Make dark scan and save it
                     # while linetype != 'none':
                     #     device.shell("input keyevent KEYCODE_B")
                     #     linetype = next(linetype_cycler)
@@ -435,7 +435,7 @@ while running:
                     # print('Saved: %s' % darkname)                    
                     # fig, ax = plt.subplots()
                     # ax.plot(freqs, dark_s21)
-                    # plt.show()
+                    # plt.show(block=False)
     pygame.display.flip()
 pygame.quit()
 sys.exit()
