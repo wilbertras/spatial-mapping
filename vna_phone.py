@@ -14,7 +14,7 @@ import os
 
 ## Input S21 parameters
 fstart = 4 # GHz
-fstop = 8.2  # GHz
+fstop = 8.1  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 100  # MHz
@@ -28,8 +28,8 @@ freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = ''
 xsteps = []   
-ysteps =[0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]  
-xstart = 532
+ysteps = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 4]  
+xstart = 535
 ystart = 1097
 
 
@@ -175,10 +175,11 @@ while running:
     draw_text_boxes(text_list, colors[bgcolor], colors[linecolor])
     
     if measure:
-        if nr_xscanned == 0 and nr_yscanned == 0:
-            device.shell("input keyevent KEYCODE_B")
-            pygame.time.wait(wait)
         if nr_xscanned < nr_x2scan and nr_x2scan > 0 and nr_yscanned == 0:
+            while linetype != 'x':
+                device.shell("input keyevent KEYCODE_B")
+                linetype = next(linetype_cycler)
+            pygame.time.wait(wait)
             xstep = xsteps[nr_xscanned]
             print('Scan %d/%d, stepping %d' % (nr_xscanned+1, nr_x2scan, xstep))
             for i in range(xstep):
@@ -189,10 +190,11 @@ while running:
             name = '%s/S21_x%02d.npy' % (datadir, nr_xscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_xscanned += 1
-        if nr_xscanned == nr_x2scan and nr_yscanned == 0:
-            device.shell("input keyevent KEYCODE_B")
+        elif nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
+            while linetype != 'y':
+                device.shell("input keyevent KEYCODE_B")
+                linetype = next(linetype_cycler)
             pygame.time.wait(wait)
-        if nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
             ystep = ysteps[nr_yscanned]
             print('Scan %d/%d, stepping %d' % (nr_yscanned+1, nr_y2scan, ystep))
             for i in range(ystep):
@@ -203,11 +205,13 @@ while running:
             name = '%s/S21_y%02d.npy' % (datadir, nr_yscanned)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_yscanned += 1
-        if nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
+        elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
             measure = 0
-            print('Helemaal f*cking klaar met de meting')
-            device.shell("input keyevent KEYCODE_B")
+            while linetype != 'both':
+                device.shell("input keyevent KEYCODE_B")
+                linetype = next(linetype_cycler)
             pygame.time.wait(wait)
+            print('Helemaal f*cking klaar met de meting')
         else:
             measure = 0
             device.shell("input keyevent KEYCODE_B")
@@ -229,8 +233,6 @@ while running:
             w = w_init
             dx = w_init
             dy = w_init
-            xsteps = []
-            ysteps = []
             colorkey_cycler = itertools.cycle(colorkeys)
             bgcolor = 'black'
             linecolor = next(colorkey_cycler)
@@ -331,8 +333,8 @@ while running:
         if event.key == pygame.K_b:
             if not square:
                 device.shell("input keyevent KEYCODE_B")
-                pygame.time.wait(wait)
                 linetype = next(linetype_cycler)
+                pygame.time.wait(wait)
         if event.key == pygame.K_l:
             if linetype == 'x':
                 if not len(xsteps):
@@ -358,8 +360,8 @@ while running:
             print('steps in Y: ', ysteps)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
-            pygame.time.wait(wait)
             square = next(square_cycler)
+            pygame.time.wait(wait)
         if event.key == pygame.K_m:
             datadir = f.select_directory(initial_dir=datadir)
             if datadir:
@@ -372,6 +374,8 @@ while running:
         if event.key == pygame.K_RETURN:
                 if inverted:
                     print('WARNING: screen is inverted')
+                elif not len(xsteps) and not len(ysteps): 
+                    print('WARNING: no steps in X and Y')
                 else:
                     measure = 1
                     nr_x2scan = len(xsteps)
@@ -381,6 +385,7 @@ while running:
                     while linetype != 'both':
                         device.shell("input keyevent KEYCODE_B")
                         linetype = next(linetype_cycler)
+                    pygame.time.wait(wait)
                     device.shell("input keyevent KEYCODE_X")
                     dx = 1
                     device.shell("input keyevent KEYCODE_Y")
@@ -416,20 +421,21 @@ while running:
                         json.dump(dict, file)
 
                     # Make dark scan and save it
-                    device.shell("input keyevent KEYCODE_B")
-                    pygame.time.wait(wait)
-                    st = time.time()
-                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-                    et = time.time()
-                    scan_time = et - st
-                    print('Time 1 scan = %d seconds' % scan_time)
-                    print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
-                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
-                    print('Saved: %s' % darkname)
-                    
-                    fig, ax = plt.subplots()
-                    ax.plot(freqs, dark_s21)
-                    plt.show()
+                    # while linetype != 'none':
+                    #     device.shell("input keyevent KEYCODE_B")
+                    #     linetype = next(linetype_cycler)
+                    # pygame.time.wait(wait)
+                    # st = time.time()
+                    # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                    # et = time.time()
+                    # scan_time = et - st
+                    # print('Time 1 scan = %d seconds' % scan_time)
+                    # print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
+                    # np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                    # print('Saved: %s' % darkname)                    
+                    # fig, ax = plt.subplots()
+                    # ax.plot(freqs, dark_s21)
+                    # plt.show()
     pygame.display.flip()
 pygame.quit()
 sys.exit()

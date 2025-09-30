@@ -2,7 +2,7 @@ import pyvisa
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.signal import convolve, find_peaks
+from scipy.signal import convolve, find_peaks, savgol_filter
 import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 
 
-def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KIDS\KIDS.csa'):
+def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile=True):
     bfout, bfin, rfout = power_calibration()
     subscanbw *= 1e-3
     totscanbw = fstop - fstart
@@ -24,10 +24,8 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile='D:\KI
     vna = connect2vi("GPIB0::16::INSTR", timeout=3000000)
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
-    if not calfile or calfile != '':
-        init_vna(vna, calibfile='D:\KIDS\VNA_through_donottouch.csa')
-    else:
-        init_vna(vna)
+    if calfile:
+        init_vna(vna, calibfile=False)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
@@ -87,13 +85,16 @@ def calibrate_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
         print(f"Error in communication with VNA: {e}")
         
 
-def init_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
-    vna.write('SYST:PRES')
-    vna.write('CONT:AUX:OUTP1:VOLT 0')
-    vna.write('CONT:AUX:OUTP2:VOLT 5')
-    vna.write('OUTP ON')
-    vna.write(f'MMEM:LOAD:CSAR {calibfile};')
-    vna.query('*OPC?')
+def init_vna(vna, calibfile=True):
+    vna.write('SYST:PRES;')
+    vna.write('CONT:AUX:OUTP1:VOLT 0;')
+    vna.write('CONT:AUX:OUTP2:VOLT 5;')
+    vna.write('OUTP ON;')
+    if calibfile:
+        vna.write('MMEM:LOAD:CSAR "D:\KIDS\KIDs.csa";')
+    else:
+        vna.write('MMEM:LOAD:CSAR "D:\KIDS\VNA_through_donottouch.csa";')
+    vna.query('*OPC?;')
     vna.write('SENS1:SWE:TRIG:POIN OFF;')
     vna.write('TRIG:SCOP CURR;')
     vna.write('INIT1:CONT ON;')
@@ -134,18 +135,11 @@ def set_weinschell(weinschell, attn):
     weinschell.write(f'CHAN1;ATTN {attn}')
     weinschell.write(f'CHAN2;ATTN {attn_chan2}')
             
+def smooth_s21(s21, n, deg):
+    return savgol_filter(s21, n, deg)
 
-def sec_diff(s21, sw):
-    window = np.ones(sw)/sw
-    print(len(s21))
-    smooth_s21 = convolve(s21, window, mode='valid')
-    print(len(smooth_s21))
-    ds21 = np.diff(smooth_s21, 1)
-    print(len(ds21))
-    smooth_ds21 = convolve(ds21, window, mode='valid')
-    print(len(smooth_ds21))
-    d2s21 = np.diff(smooth_ds21, 1)
-    print(len(d2s21))
+def sec_diff(s21):
+    d2s21 = np.diff(s21, 2)
     return d2s21
 
 
@@ -160,17 +154,15 @@ def plot_s21(freqs, s21):
     return fig
 
 
-def plot_pks(freqs, s21, d2s21, locs, mph, sw):
-    dw = len(s21)-len(d2s21)
+def plot_pks(freqs, s21, d2s21, locs, mph):
     fig, axes = plt.subplot_mosaic('a;b', constrained_layout=True, figsize=(12, 6), sharex=True)
     ax = axes['a']
-    _ = ax.plot(freqs[dw:], d2s21, lw=0.2)
-    ax.scatter(freqs[dw:][locs], d2s21[locs], marker='v', color='None', edgecolor='tab:green')
+    _ = ax.plot(freqs[:-2], d2s21, lw=0.2)
+    ax.scatter(freqs[:-2][locs], d2s21[locs], marker='v', color='None', edgecolor='tab:green')
     ax.axhline(mph, c='tab:red')
     ax = axes['b']
-    dw -= sw
-    _ = ax.plot(freqs[dw:], s21[dw:], lw=0.2)
-    ax.scatter(freqs[dw:][locs], s21[dw:][locs], marker='^', color='None', edgecolor='tab:green', label=str(len(locs)) + ' peaks')
+    _ = ax.plot(freqs, s21, lw=0.2)
+    ax.scatter(freqs[locs], s21[locs], marker='^', color='None', edgecolor='tab:green', label=str(len(locs)) + ' peaks')
     ax.set_xlim([np.amin(freqs), np.amax(freqs)])
     ax.set_ylabel('|$S_{21}$| [dB]')
     ax.set_xlabel('F [GHz]')
@@ -180,12 +172,16 @@ def plot_pks(freqs, s21, d2s21, locs, mph, sw):
     return fig
 
 
-def plot_dfs(locs, freqs):
-    f0s = freqs[locs]
-    dfs = f0s[1:] - f0s[:-1]
+def plot_dfs(locs, freqs, relative=True, lo=6):
     fig, ax = plt.subplots()
-    ax.hist(dfs*1e3, bins='auto')
-    ax.set_xlabel('df [MHz]')
+    f0s = freqs[locs]
+    if relative:
+        dfs = (f0s[1:] - f0s[:-1]) / f0s[:-1] * 1e2
+        ax.set_xlabel('df/f [%]')
+    else:
+        dfs = (f0s[1:] - f0s[:-1])*1e3
+        ax.set_xlabel('df [MHz]')
+    ax.hist(dfs, bins='auto')
     ax.set_ylabel('Counts')
     ax.set_title('Frequency spacings')
 
