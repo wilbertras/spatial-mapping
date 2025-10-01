@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 
 
-def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile=True):
+def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile=False):
     bfout, bfin, rfout = power_calibration()
     subscanbw *= 1e-3
     totscanbw = fstop - fstart
@@ -25,7 +25,7 @@ def get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calfile=True):
     weinschell = connect2vi("GPIB0::10::INSTR", timeout=300000)
     # Initialize VNA
     if calfile:
-        init_vna(vna, calibfile=False)
+        init_vna(vna, calibfile=calfile)
     for i in range(num_subscans):
         f0 = f0start + i*subscanbw
         if i == 0:
@@ -85,7 +85,7 @@ def calibrate_vna(vna, calibfile='D:\KIDS\KIDs.csa'):
         print(f"Error in communication with VNA: {e}")
         
 
-def init_vna(vna, calibfile=True):
+def init_vna(vna, calibfile):
     vna.write('SYST:PRES;')
     vna.write('CONT:AUX:OUTP1:VOLT 0;')
     vna.write('CONT:AUX:OUTP2:VOLT 5;')
