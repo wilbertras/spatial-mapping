@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 8.1 # GHz
-fstop = 8.99  # GHz
+fstart = 4 # GHz
+fstop = 8.1  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 100  # MHz
@@ -27,9 +27,9 @@ ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
-xsteps = [0] + 31 * [3]  
-ysteps = [0] + 31 * [3]   
-xstart = 535
+xsteps = [0] + 12 * [3]  
+ysteps = []  
+xstart = 535 + 19 * 3
 ystart = 1097
 
 
@@ -412,7 +412,7 @@ while running:
                     
                     # Initiate array
                     freqsname = '%s/freqs.npy' % (datadir)
-                    darkname = '%s/S21_darkX.npy' % (datadir)
+                    darkname = '%s/S21_dark.npy' % (datadir)
                     settingsname = '%s/settings.txt' % (datadir)
                     dict = {'color': linecolor, 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
