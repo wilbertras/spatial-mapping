@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4 # GHz
-fstop = 8.1  # GHz
+fstart = 5 # GHz
+fstop = 7.1  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 100  # MHz
@@ -27,10 +27,10 @@ ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
-xsteps = [0] + 12 * [3]  
-ysteps = []  
-xstart = 535 + 19 * 3
-ystart = 1097
+xsteps = []  
+ysteps = [0, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 4, 2, 3, 3, 4]  
+xstart = None
+ystart = 1118
 
 
 try:
@@ -390,18 +390,20 @@ while running:
                     dx = 1
                     device.shell("input keyevent KEYCODE_Y")
                     dy = 1
-                    while x > xstart:
-                        device.shell("input keyevent KEYCODE_DPAD_LEFT")
-                        x -= dx
-                    while x < xstart:
-                        device.shell("input keyevent KEYCODE_DPAD_RIGHT")
-                        x += dx
-                    while y > ystart:
-                        device.shell("input keyevent KEYCODE_DPAD_DOWN")
-                        y -= dy
-                    while y < ystart:
-                        device.shell("input keyevent KEYCODE_DPAD_UP")
-                        y += dy
+                    if nr_x2scan:
+                        while x > xstart:
+                            device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                            x -= dx
+                        while x < xstart:
+                            device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                            x += dx
+                    if nr_y2scan:
+                        while y > ystart:
+                            device.shell("input keyevent KEYCODE_DPAD_DOWN")
+                            y -= dy
+                        while y < ystart:
+                            device.shell("input keyevent KEYCODE_DPAD_UP")
+                            y += dy
                     
                     
                     print('Start X: ', xstart)
@@ -423,7 +425,7 @@ while running:
                     settingsname = '%s/settings.txt' % (datadir)
                     dict = {'color': linecolor, 'width':w,
                             'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
-                            'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points}
+                            'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points, 'xstart':xstart, 'ystart':ystart, 'xsteps':xsteps, 'ysteps':ysteps}
                     with open(settingsname, 'w') as file:
                         json.dump(dict, file)
 
