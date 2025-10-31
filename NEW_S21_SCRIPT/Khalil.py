@@ -9,6 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
+
+
+
+
 def estimate_initials(f, mag):
     a_guess = np.average([mag[-1], mag[0]]) 
     b_guess = (mag[-1] - mag[0]) / (f[-1] - f[0])
@@ -35,6 +39,63 @@ def Khalil_func_magspace_noslope(f, f0, Ql, Qc_re, dw, a, b):
 
 def Khalil_func_logspace(f, f0, Ql, Qc_re, dw, a, b):
     return 20*np.log10(np.abs(1 - (Ql/Qc_re *(1 + 2j*Ql*dw/f0) / (1 + 2j * Ql * (f - f0) / f0)))*np.abs((b*(f-f0)+a)))
+
+
+def khalil_swenson(f, f0, Ql, Qc_re, a_nonlin, dw):
+    wgs = f
+    w0 = f0
+    Q = Ql
+    Qc = Qc_re
+    a = a_nonlin
+
+    S21 = np.abs(1 - (Q/Qc * (1 + 2j * Q * dw/w0))/(1 + 2j*Q*((((np.cbrt(-np.sqrt((-( (4*(Q * ((wgs - w0)/w0))**2 - 3)**3 )/46656 + ( (27*a + 8*(Q * ((wgs - w0)/w0))**3 + 18*(Q * ((wgs - w0)/w0)))**2 )/46656)) + a/8 + (Q * ((wgs - w0)/w0))**3/27 + (Q * ((wgs - w0)/w0))/12) + np.cbrt( np.sqrt((-( (4*(Q * ((wgs - w0)/w0))**2 - 3)**3 )/46656 + ( (27*a + 8*(Q * ((wgs - w0)/w0))**3 + 18*(Q * ((wgs - w0)/w0)))**2 )/46656)) + a/8 + (Q * ((wgs - w0)/w0))**3/27 + (Q * ((wgs - w0)/w0))/12))) + (Q * ((wgs - w0)/w0))/3)/Q)))
+    S21 = np.where(np.isfinite(S21), S21, 1e12) # replace infs with 1e12 to keep 'least_squares' fitting method happy.
+    return S21
+
+class KhalilSwensonModel(lmf.model.Model):
+    # magnitude ? version of the Swenson fit
+    def __init__(self, f, mag, *args, **kwargs):
+        super().__init__(khalil_swenson, *args, **kwargs)
+
+        # Ql_guess, f0_guess, Qc_norm_guess, a_guess, b_guess, BW_guess = estimate_initials(f, mag)
+       
+        # self.set_param_hint('Ql', expr='1/(1/Qc_re + 1/Qi)')
+        # self.set_param_hint('Qc_re', min = 1e4, max=1e6)
+        # self.set_param_hint('f0', min = f0_guess-3*BW_guess, max=f0_guess+3*BW_guess)
+        # self.set_param_hint('a_nonlin', min = 1e-9, max = 0.8) # Als je 0 toestaat dan neemt ie onterecht 0.
+        # self.set_param_hint('Qi', min=1e3, max=1e7)
+        
+        # Qi_guess = 1e5
+        # a_nonlin_guess=0.1
+
+        # params = self.make_params(Qi=Qi_guess, Qc_re=Qc_norm_guess, f0=f0_guess, 
+        #                             a_nonlin_guess=a_nonlin_guess)
+
+
+        #scipy-version guesses and bounds
+        fr_guess = f[np.argmin(mag)]
+        Qi_guess = 2e5
+        Qc_guess = 3.5e4
+        a_guess  = 0.0   
+        dw_guess = 0         
+        # --- bounds ---
+        fr_lo, fr_hi = f.min(), f.max()
+        Qi_lo, Qi_hi = 1e2, 1e9
+        Qc_lo, Qc_hi = 1e2, 1e9
+        a_lo, a_hi   = 0.0001, 1.0
+        dw_lo, dw_hi   = -1e-2, 1e-2
+
+        self.set_param_hint('Ql', expr='1/(1/Qc_re + 1/Qi)') # Fit Qc and Qi, calculate Q, for better stability.
+        self.set_param_hint('Qc_re', min = Qc_lo, max=Qc_hi)
+        self.set_param_hint('f0', min = fr_lo, max=fr_hi)
+        self.set_param_hint('a_nonlin', min = a_lo, max = a_hi) # Als je 0 toestaat dan neemt ie onterecht 0.
+        self.set_param_hint('Qi', min=Qi_lo, max=Qi_hi)
+        self.set_param_hint('dw', min=dw_lo, max=dw_hi)
+
+        params = self.make_params(Qi=Qi_guess, Qc_re=Qc_guess, f0=fr_guess, 
+                                    a_nonlin_guess=a_guess, dw=dw_guess)
+        self.guess = lmf.models.update_param_vals(params, self.prefix, **kwargs)
+
 
 class KhalilModel_magspace(lmf.model.Model):
     # magnitude version of the Khalil fit

@@ -393,9 +393,16 @@ while running:
                     while x > xstart:
                         device.shell("input keyevent KEYCODE_DPAD_LEFT")
                         x -= dx
+                    while x < xstart:
+                        device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                        x += dx
                     while y > ystart:
                         device.shell("input keyevent KEYCODE_DPAD_DOWN")
                         y -= dy
+                    while y < ystart:
+                        device.shell("input keyevent KEYCODE_DPAD_UP")
+                        y += dy
+                    
                     
                     print('Start X: ', xstart)
                     print('Start Y: ', ystart)
