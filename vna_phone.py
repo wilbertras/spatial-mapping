@@ -28,9 +28,9 @@ freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
 xsteps = []  
-ysteps = [0, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 4, 2, 3, 3, 4]  
+ysteps = []  
 xstart = None
-ystart = 1118
+ystart = None
 
 
 try:
