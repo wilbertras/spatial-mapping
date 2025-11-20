@@ -13,7 +13,7 @@ import os
 
 
 ## Input S21 parameters
-fstart = 5 # GHz
+fstart = 5.1 # GHz
 fstop = 7.1  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
@@ -341,23 +341,29 @@ while running:
                     xsteps.append(0)
                     xstart = copy(int(x))
                     xprev = copy(int(x))
-                    print('Start X: ', xstart)
                 else:
                     if int(x - xprev):
                         xsteps.append(int(x - xprev))
                         xprev = copy(x)
+                print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
+                print('xsteps = ', xsteps)
             elif linetype == 'y':
                 if not len(ysteps):
                     ysteps.append(0)
                     ystart = copy(int(y))
                     yprev = copy(int(y))
-                    print('Start Y: ', ystart)
                 else:
                     if int(y - yprev):
                         ysteps.append(int(y - yprev))
                         yprev = copy(y)
-            print('Stpes in X: ', xsteps)
-            print('steps in Y: ', ysteps)
+                print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
+                print('ysteps = ', ysteps)
+            else:
+                print('WARNING: steps can only be added when having a single line either in x or y')
+                print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
+                print('xsteps = ', xsteps)
+                print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
+                print('ysteps = ', ysteps)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             square = next(square_cycler)
@@ -404,7 +410,6 @@ while running:
                         while y < ystart:
                             device.shell("input keyevent KEYCODE_DPAD_UP")
                             y += dy
-                    
                     
                     print('Start X: ', xstart)
                     print('Start Y: ', ystart)
