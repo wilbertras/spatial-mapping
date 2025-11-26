@@ -29,8 +29,8 @@ date = datetime.today()
 calibfile = False
 xstart = None
 xsteps = []  
-ystart =  1097 # 32 ysteps
-ysteps =  [0, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3]
+ystart =  None # 32 ysteps
+ysteps =  []
 
 
 try:
