@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4 # GHz
-fstop = 8.39  # GHz
+fstart = 5 # GHz
+fstop = 7  # GHz
 totscanbw = fstop - fstart
 num_points = 12801
 subscanbw = 200  # MHz
