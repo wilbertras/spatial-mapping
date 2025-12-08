@@ -6,23 +6,28 @@ from scipy.signal import find_peaks, savgol_filter
 from matplotlib.widgets import Button, Slider
 
 
-n0 = 5         # smoothing window length must be even
-deg0 = 4      # minimal peak height 
-mph0 = 0
-mpp0 = 0
+n0 = 2         # smoothing window length must be even
+deg0 = 0      # minimal peak height 
+mph0 = 1
+mpp0 = 1
 
 arr = open_numpy_array()
 freqs, s21 = arr
+d2s21 = np.diff(s21, n=2)
 
+smooth_d2s21 = savgol_filter(d2s21, n0, deg0)
 smooth_s21 = savgol_filter(s21, n0, deg0)
-locs = find_peaks(-smooth_s21, height=mph0, prominence=mpp0)[0]
+locs = find_peaks(smooth_d2s21, height=mph0, prominence=mpp0)[0] + 1
 
-fig, ax = plt.subplots(figsize=(8,4))
+fig, ax = plt.subplots(3, 1, figsize=(8,8), constrained_layout=True)
 fig.subplots_adjust(bottom=0.4)
-ax.plot(freqs, s21, color='gray')
-l, = ax.plot(freqs, smooth_s21, lw=1)
-s, = ax.plot(freqs[locs], smooth_s21[locs], color='red', ls='None', marker='o', label='%d kids' % len(locs))    
-ax.legend()
+ax[0].plot(freqs[:-2], smooth_d2s21, color='gray')
+ax[1].plot(freqs, s21, color='gray')
+l, = ax[0].plot(freqs[:-2], smooth_d2s21, lw=1)
+s, = ax[0].plot(freqs[locs-1], smooth_d2s21[locs-1], color='red', ls='None', marker='o', label='%d kids' % len(locs))    
+l2, = ax[1].plot(freqs, smooth_s21, lw=1)
+s2, = ax[1].plot(freqs[locs], smooth_s21[locs], color='red', ls='None', marker='o', label='%d kids' % len(locs))    
+ax[0].legend()
 
 ax_n = fig.add_axes([0.25, 0.1, 0.65, 0.03])
 ax_deg = fig.add_axes([0.25, 0.15, 0.65, 0.03])
@@ -37,19 +42,19 @@ sn = Slider(
 )
 
 sdeg = Slider(
-    ax_deg, "deg", 1, 10,
+    ax_deg, "deg", 0, 9,
     valinit=deg0, valstep=1,
     initcolor='none'  # Remove the line marking the valinit position.
 )
 
 smph = Slider(
-    ax_mph, "mph", -50, 0,
+    ax_mph, "mph", 0, 10,
     valinit=mph0, valstep=1,
     initcolor='none'  # Remove the line marking the valinit position.
 )
 
 smpp = Slider(
-    ax_mpp, "mpp", 0, 30,
+    ax_mpp, "mpp", 0, 10,
     valinit=mpp0, valstep=1,
     initcolor='none'  # Remove the line marking the valinit position.
 )
@@ -59,12 +64,16 @@ def update(val):
     deg = sdeg.val
     mph = smph.val
     mpp = smpp.val
+    smooth_d2s21 = savgol_filter(d2s21, n, deg)
     smooth_s21 = savgol_filter(s21, n, deg)
-    l.set_ydata(smooth_s21)
-    locs = find_peaks(-smooth_s21, height=mph, prominence=mpp)[0]
-    s.set_xdata(freqs[locs])
-    s.set_ydata(smooth_s21[locs])
-    ax.legend(handles=[s], labels=['%d kids' % len(locs)])
+    l.set_ydata(smooth_d2s21)
+    l2.set_ydata(smooth_s21)
+    locs = find_peaks(smooth_d2s21, height=mph, prominence=mpp)[0] + 1
+    s.set_xdata(freqs[locs-1])
+    s.set_ydata(smooth_d2s21[locs-1])
+    s2.set_xdata(freqs[locs])
+    s2.set_ydata(smooth_s21[locs])
+    ax[0].legend(handles=[s], labels=['%d kids' % len(locs)])
     fig.canvas.draw_idle()
 
 
