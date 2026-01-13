@@ -2,19 +2,16 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import numpy as np
 import pickle
+import functions as ft
 import matplotlibcolors
 plt.style.use('matplotlibrc')
-
-def func(x, a, b):
-    return a*x+b
-
 
 class Mapping:
     """
     Mapping class to handle the mapping of data.
     """
 
-    def __init__(self, file, trim=False, Q=20e3, min_lw_spacing=4, deg=2):
+    def __init__(self, file, mask_edges=False, trim=False, Q=20e3, min_lw_spacing=4, deg=2):
         self.file = file
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
@@ -28,6 +25,7 @@ class Mapping:
             self.trim = False
         else:
             self.trim = False
+        self.mask_edges = mask_edges
         self.initialize(arr)
 
     def initialize(self, arr):
@@ -56,6 +54,10 @@ class Mapping:
             self.fm = self.fm / 1e9  # Convert to GHz
         self.map = self.make_map(self.M, self.N)
         self.df_f = self.comp_df_f(self.fd, self.fm)
+        edge_mask = np.zeros(self.nr, dtype=bool)
+        ids_center = self.map[1:-1, :-1].flatten()
+        edge_mask[ids_center] = True
+        self.edge_mask = edge_mask
         self.fit_func = self.fit(self.fd, self.fm)
         self.fd_fit = self.fit_func(self.fd)
         self.std = np.nanstd(self.df_f)
@@ -68,7 +70,10 @@ class Mapping:
     def remap(self, ids):
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
-        arr['measured']['f0'][ids] = np.nan
+        if self.trim:
+            arr['trimmeasured']['f0'][ids] = np.nan
+        else:
+            arr['measured']['f0'][ids] = np.nan
         self.initialize(arr)
 
     def make_map(self, M, N):
@@ -87,8 +92,12 @@ class Mapping:
         return df_f
     
     def fit(self, design, meas):
-        nanmask = np.isnan(meas) | np.isnan(design)
-        coeff = np.polyfit(design[~nanmask], meas[~nanmask], self.deg)
+        nanmask = ~(np.isnan(meas) | np.isnan(design))
+        if self.mask_edges:
+           mask = self.edge_mask & nanmask
+        else:
+            mask = nanmask
+        coeff = np.polyfit(design[mask], meas[mask], self.deg)
         return np.poly1d(coeff)
 
     def spacings(self, Q, nr_lw_spacing):
@@ -173,3 +182,24 @@ class Mapping:
             self.plot_scatter_vs_freq(ax=axes['b'], clim=clim, flim=flim)
             self.plot_scatter_map(ax=axes['c'], clim=clim)
             self.plot_spacings(ax=axes['d'], lwlim=lwlim)
+
+
+    def remove_spatial(self):
+        df_f_map = self.df_f_fit[self.map]
+        if self.mask_edges:
+            x = np.arange(self.N-1)
+            y = np.arange(1, self.M-1)
+            Z = df_f_map[1:-1, :-1]
+        else:
+            x = np.arange(self.N)
+            y = np.arange(self.M)
+            Z = df_f_map
+
+        X, Y = np.meshgrid(x, y)
+        degree = 2
+        coeffs, powers = ft.fit_poly2d_nan_safe(X, Y, Z, degree)
+        X_fit, Y_fit = np.meshgrid(np.arange(self.M), np.arange(self.N))
+        Z_fit = ft.eval_poly2d_on_grid(X_fit, Y_fit, coeffs, powers)
+        self.df_f_spatial = np.zeros_like(self.df_f_fit)
+        self.df_f_spatial[self.map.flatten()] = (df_f_map - Z_fit).flatten()
+        
