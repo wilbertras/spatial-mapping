@@ -1,0 +1,1 @@
+{"color": "white", "width": 2, "fstart": 4.1, "fstop": 4.3, "subscanbw": 200, "kidpower": -110, "ifbw": 1000, "nr points": 12801, "xstart": null, "ystart": 1101, "xsteps": [], "ysteps": [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]}
