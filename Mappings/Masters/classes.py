@@ -76,6 +76,15 @@ class Mapping:
             arr['measured']['f0'][ids] = np.nan
         self.initialize(arr)
 
+    def nan_edges(self):
+        with open(self.file, 'rb') as f:
+            arr = pickle.load(f)
+        if self.trim:
+            arr['trimmeasured']['f0'][~self.edge_mask] = np.nan
+        else:
+            arr['measured']['f0'][~self.edge_mask] = np.nan
+        self.initialize(arr)
+
     def make_map(self, M, N):
         """
         Create kid_id_board
