@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4.1 # GHz
-fstop = 8.3  # GHz
+fstart = 4 # GHz
+fstop = 8.2  # GHz
 totscanbw = fstop - fstart
 num_points = 12801
 subscanbw = 200  # MHz
@@ -29,8 +29,8 @@ date = datetime.today()
 calibfile = False
 xstart = None
 xsteps = []
-ystart =  1101 # 32 ysteps
-ysteps =  [0]+ 31*[3]
+ystart =  1099 # 32 ysteps
+ysteps =  [0] + 31*[3]
 
 
 try:
@@ -439,17 +439,17 @@ while running:
                         device.shell("input keyevent KEYCODE_B")
                         linetype = next(linetype_cycler)
                     pygame.time.wait(wait)
-                    # st = time.time()
-                    # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-                    # et = time.time()
-                    # scan_time = et - st
-                    # print('Time 1 scan = %d seconds' % scan_time)
-                    # print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
-                    # np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
-                    # print('Saved: %s' % darkname)                    
-                    # fig, ax = plt.subplots()
-                    # ax.plot(freqs, dark_s21)
-                    # plt.show(block=True)
+                    st = time.time()
+                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                    et = time.time()
+                    scan_time = et - st
+                    print('Time 1 scan = %d seconds' % scan_time)
+                    print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
+                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                    print('Saved: %s' % darkname)                    
+                    fig, ax = plt.subplots()
+                    ax.plot(freqs, dark_s21)
+                    plt.show(block=True)
     pygame.display.flip()
 pygame.quit()
 sys.exit()
