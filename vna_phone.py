@@ -27,10 +27,10 @@ ifbw = 1000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
-xstart = None
-xsteps = []
-ystart =  1099 # 32 ysteps
-ysteps =  [0] + 31*[3]
+xstart = 495
+xsteps = [0] + 31*[3]
+ystart =  1099 + 12*3 # 32 ysteps
+ysteps =  [0] + 4*[3]
 
 
 try:
