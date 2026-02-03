@@ -3,11 +3,11 @@ import time
 
 if __name__ == "__main__":
     fstart = 4       # GHz
-    fstop = 4.5      # GHz
-    scanbw = 500       # MHz
+    fstop = 9      # GHz
+    scanbw = 100       # MHz
     nr_points = 6401
     power = -110        # dBm
-    ifbw = 10000         # Hz
+    ifbw = 1000         # Hz
 
     st = time.time()
     freqs, s21 = get_s21(fstart, fstop, scanbw, nr_points, power, ifbw, calfile=False)

@@ -14,7 +14,7 @@ import os
 
 ## Input S21 parameters
 fstart = 4 # GHz
-fstop = 8.2  # GHz
+fstop = 9  # GHz
 totscanbw = fstop - fstart
 num_points = 12801
 subscanbw = 200  # MHz
@@ -29,8 +29,8 @@ date = datetime.today()
 calibfile = False
 xstart = None
 xsteps = []
-ystart =  1099 # 32 ysteps
-ysteps =  [0]+31*[3]
+ystart =  1102 # 32 ysteps
+ysteps =  [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3]
 
 
 try:
