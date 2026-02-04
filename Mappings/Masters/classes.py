@@ -11,30 +11,20 @@ class Mapping:
     Mapping class to handle the mapping of data.
     """
 
-    def __init__(self, file, mask_edges=False, trim=False, Q=20e3, min_lw_spacing=4, deg=2):
+    def __init__(self, file, mask_edges=False, type='', Q=20e3, min_lw_spacing=4, deg=2):
         self.file = file
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
         self.Q = Q
         self.min_lw_spacing = min_lw_spacing
         self.deg = deg
-        if trim and ('trimdesign' in arr):
-            self.trim = True
-        elif trim and ('trimdesign' not in arr):
-            print("WARNING: No trimmed data found, proceeding with untrimmed data.")
-            self.trim = False
-        else:
-            self.trim = False
+        self.type = type
         self.mask_edges = mask_edges
         self.initialize(arr)
 
     def initialize(self, arr):
-        if self.trim:
-            design = 'trimdesign'
-            measured = 'trimmeasured'
-        else:
-            design = 'design'
-            measured = 'measured'
+        design = self.type + 'design'
+        measured = self.type + 'measured'
 
         self.row = arr['design']['row'].astype(int)
         self.col = arr['design']['col'].astype(int)
@@ -70,19 +60,13 @@ class Mapping:
     def remap(self, ids):
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
-        if self.trim:
-            arr['trimmeasured']['f0'][ids] = np.nan
-        else:
-            arr['measured']['f0'][ids] = np.nan
+        arr[self.type + 'measured']['f0'][ids] = np.nan
         self.initialize(arr)
 
     def nan_edges(self):
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
-        if self.trim:
-            arr['trimmeasured']['f0'][~self.edge_mask] = np.nan
-        else:
-            arr['measured']['f0'][~self.edge_mask] = np.nan
+        arr[self.type + 'measured'][~self.edge_mask] = np.nan
         self.initialize(arr)
 
     def make_map(self, M, N):
