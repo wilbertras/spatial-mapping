@@ -13,24 +13,24 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4 # GHz
-fstop = 9  # GHz
+fstart = 2.1 # GHz
+fstop = 3.8  # GHz
 totscanbw = fstop - fstart
-num_points = 12801
-subscanbw = 200  # MHz
+num_points = 6401
+subscanbw = 100  # MHz
 num_subscans = int(np.ceil(totscanbw / subscanbw))
 realfstart = fstart
 realfstop = fstart + num_subscans * (subscanbw*1e-3)
 len_s21 = int(num_subscans * num_points)
 kidpower = -110 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
 xstart = None
 xsteps = []
-ystart =  1102 # 32 ysteps
-ysteps =  [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3]
+ystart =  1088 # 32 ysteps
+ysteps =  [0]+97*[2]
 
 
 try:
