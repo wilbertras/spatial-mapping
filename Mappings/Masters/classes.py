@@ -11,13 +11,14 @@ class Mapping:
     Mapping class to handle the mapping of data.
     """
 
-    def __init__(self, file, mask_edges=False, type='', Q=20e3, min_lw_spacing=4, deg=2):
+    def __init__(self, file, mask_edges=False, type='', Q=50e3, min_lw_spacing=2, deg=2, offset=True):
         self.file = file
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
         self.Q = Q
         self.min_lw_spacing = min_lw_spacing
         self.deg = deg
+        self.offset = offset
         self.type = type
         self.mask_edges = mask_edges
         self.initialize(arr)
@@ -48,8 +49,7 @@ class Mapping:
         ids_center = self.map[1:-1, :-1].flatten()
         edge_mask[ids_center] = True
         self.edge_mask = edge_mask
-        self.fit_func = self.fit(self.fd, self.fm)
-        self.fd_fit = self.fit_func(self.fd)
+        self.fd_fit = self.fit(self.fd, self.fm)
         self.std = np.nanstd(self.df_f)
         self.df_f_fit = self.comp_df_f(self.fd_fit, self.fm)
         self.std_fit = np.nanstd(self.df_f_fit)
@@ -66,8 +66,15 @@ class Mapping:
     def nan_edges(self):
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
-        arr[self.type + 'measured'][~self.edge_mask] = np.nan
+        arr[self.type + 'measured']['f0'][~self.edge_mask] = np.nan
         self.initialize(arr)
+
+    def nan_ids(self, ids):
+        with open(self.file, 'rb') as f:
+            arr = pickle.load(f)
+        arr[self.type + 'measured']['f0'][~ids] = np.nan
+        self.initialize(arr)
+        return self
 
     def make_map(self, M, N):
         """
@@ -90,8 +97,17 @@ class Mapping:
            mask = self.edge_mask & nanmask
         else:
             mask = nanmask
-        coeff = np.polyfit(design[mask], meas[mask], self.deg)
-        return np.poly1d(coeff)
+        if self.offset:
+            self.coeff = np.polyfit(design[mask], meas[mask], self.deg)
+            return np.polyval(self.coeff, design)
+        else:
+            if self.deg == 1:
+                self.coeff, _ = curve_fit(linear, design[mask], meas[mask])           
+                return linear(design, *self.coeff)
+            elif self.deg == 2:
+                self.coeff, _ = curve_fit(quadratic, design[mask], meas[mask])           
+                return quadratic(design, *self.coeff)
+    
 
     def spacings(self, Q, nr_lw_spacing):
         argnans = np.isnan(self.fm)
@@ -196,3 +212,8 @@ class Mapping:
         self.df_f_spatial = np.zeros_like(self.df_f_fit)
         self.df_f_spatial[self.map.flatten()] = (df_f_map - Z_fit).flatten()
         
+def linear(x, a):
+    return a*x
+
+def quadratic(x, a, b):
+    return a*x**2 + b*x

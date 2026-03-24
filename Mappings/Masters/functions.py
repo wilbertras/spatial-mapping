@@ -57,7 +57,7 @@ def eval_poly2d_on_grid(X, Y, coeffs, powers):
 
 def rel_freqs(f0, f1, nr_kids):
     oct = np.log2(f1/f0)
-    spacing = 2**(oct/nr_kids)
+    spacing = 2**(oct/(nr_kids-1))
     powers = np.arange(nr_kids)
     f0s = f0 * (spacing)**powers
     return f0s
@@ -69,7 +69,7 @@ def yld(Q, chi, sigma, Delta, fs=None):
         f1 = fs[-1]
         oct = np.log2(f1/f0)
         N = len(fs)
-        Delta = 1-2**(oct/N)
+        Delta = 2**(oct/(N-1)) - 1
     else:
         pass
     return p0(Q, chi, sigma, Delta)
@@ -81,12 +81,39 @@ def p0(Q, chi, sigma, Delta):
     return np.prod(1-(erf((n*Delta + chi*w)/(np.sqrt(2)*sigma)) - erf((n*Delta - chi*w)/(np.sqrt(2)*sigma)))/2)**2
 
 
-def yld_map(Ns, sigmas, Q, chi, oct):
+def p1(chi, sigma, Delta):
+    n = np.arange(1,10000)
+    return np.prod(1-(erf((n*Delta + chi)/(np.sqrt(2)*sigma)) - erf((n*Delta - chi)/(np.sqrt(2)*sigma)))/2)**2
+
+
+def p0_numeric(oct, Q, nr_kids, sigma, chi, nr_iter=10):
+    f0 = 1
+    f1 = f0 * 2**oct
+    f_d = rel_freqs(f0, f1, nr_kids)
+    f_m = np.random.normal(f_d, sigma*f_d, (nr_iter, nr_kids))
+    f_m = np.sort(f_m, axis=1)
+    df_left = np.absolute(f_m[:, 1:] - f_m[:, :-1]) / f_m[:, :-1]
+    df_right = np.absolute(f_m[:, :-1] - f_m[:, 1:]) / f_m[:, 1:]
+    too_close = np.zeros((nr_iter, nr_kids))
+    too_close_left = df_left < (chi / Q)
+    too_close_right = df_right < (chi / Q)
+    too_close[:, 1:] += too_close_left
+    too_close[:, :-1] += too_close_right 
+    yields = np.sum(too_close==0, axis=1) / nr_kids
+    return np.mean(yields, axis=0)
+
+
+def yld_map(Ns, sigmas, Q, chi, oct, type='analytic'):
     map = np.zeros((len(sigmas), len(Ns)))
     for i, N in enumerate(Ns):
-        Delta = 1-2**(oct/N)
-        for j, sigma in enumerate(sigmas):
-            map[i, j] = yld(Q, chi, sigma, Delta)
+        if type=='analytic':
+            Delta = 2**(oct/(N-1)) - 1
+            for j, sigma in enumerate(sigmas):
+                map[i, j] = yld(Q, chi, sigma, Delta)
+        elif type=='numeric':
+            for j, sigma in enumerate(sigmas):
+                for i, N in enumerate(Ns):
+                    map[i, j] = p0_numeric(oct, Q, N, sigma, chi)
     return map
 
 def bin2mat(file_path):
@@ -139,6 +166,6 @@ def get_noise_psd(file, wl=256, fs=1e6):
     _, phase = bin2mat(file)
     phase -= np.mean(phase)
     fxx, nxx = welch(phase, fs=int(fs), nperseg=wl, window='flattop', return_onesided=True)
-    return logsmooth(fxx, nxx)
+    return phase, logsmooth(fxx, nxx)
 
 
