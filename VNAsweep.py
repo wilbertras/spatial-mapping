@@ -2,9 +2,9 @@ from functions import *
 import time
 
 if __name__ == "__main__":
-    fstart = 5       # GHz
-    fstop = 6    # GHz
-    scanbw = 100        # MHz
+    fstart = 3.4       # GHz
+    fstop = 4.4    # GHz
+    scanbw = 1000        # MHz
     nr_points = 6401
     power = -110        # dBm
     ifbw = 10000         # Hz
