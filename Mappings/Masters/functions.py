@@ -2,6 +2,7 @@ import numpy as np
 from itertools import product
 from scipy.special import erf
 from scipy.signal import welch
+from sklearn.neighbors import KernelDensity
 
 
 def build_design_matrix(x, y, degree):
@@ -86,10 +87,14 @@ def p1(chi, sigma, Delta):
     return np.prod(1-(erf((n*Delta + chi)/(np.sqrt(2)*sigma)) - erf((n*Delta - chi)/(np.sqrt(2)*sigma)))/2)**2
 
 
-def p0_numeric(oct, Q, nr_kids, sigma, chi, nr_iter=10):
-    f0 = 1
-    f1 = f0 * 2**oct
-    f_d = rel_freqs(f0, f1, nr_kids)
+def p0_numeric(oct, Q, nr_kids, sigma, chi, nr_iter=10, fs=None):
+    if fs is not None:
+        f_d = fs
+        nr_kids = len(f_d)
+    else:
+        f0 = 1
+        f1 = f0 * 2**oct
+        f_d = rel_freqs(f0, f1, nr_kids)
     f_m = np.random.normal(f_d, sigma*f_d, (nr_iter, nr_kids))
     f_m = np.sort(f_m, axis=1)
     df_left = np.absolute(f_m[:, 1:] - f_m[:, :-1]) / f_m[:, :-1]
@@ -169,3 +174,55 @@ def get_noise_psd(file, wl=256, fs=1e6):
     return phase, logsmooth(fxx, nxx)
 
 
+# def comp_yield(f0s, Q, threshold):
+#     diffs = np.diff(f0s)
+#     fwhms = f0s/Q
+#     rel_diffs = diffs/fwhms[:-1]
+#     lo_id = np.argmax(diffs)
+#     too_close = rel_diffs<threshold
+#     good = np.ones(f0s.shape)
+#     good[1:] -= too_close
+#     good[:-1] -= too_close
+#     spaced = np.sum(good==True)
+#     total = len(f0s)
+#     return rel_diffs, lo_id, spaced/total
+
+
+# def plot_spacings(f0s, Q, threshold, kernel=False, ax=None, title='', c='b', bins='auto'):
+#     rel_diffs, lo_id, yld = comp_yield(f0s, Q, threshold)
+#     if not ax:
+#         fig, ax = plt.subplots()
+#     else:
+#         lower = rel_diffs[:lo_id]
+#         upper = rel_diffs[lo_id+1:]
+#         _ = ax.hist(lower, bins=bins, alpha=.5, label='lower band', facecolor=c, edgecolor=c, density=True)
+#         _ = ax.hist(upper, bins=bins, alpha=.5, label='upper band', facecolor='w', edgecolor=c, density=True)
+#         if kernel:
+#             x, density, std = kde(lower, bw=1)
+#             ax.plot(x, density, c='k', ls='--')
+#             print(std/np.sqrt(2)/Q)
+#             x, density, std = kde(upper, bw=1)
+#             ax.plot(x, density, c='k', ls='--')
+#             print(std/np.sqrt(2)/Q)
+#         # ax.axvline(threshold, c='r', ls='--', lw=1, label='minimal spacing')
+#         # ax.set_title(title + 'usable yield = %.1f%%' % (yld*1e2), fontsize=10)
+#         ax.set_ylabel('$\#$')
+#         ax.legend()
+
+
+def kde(y, ylim=[], bw=.2):
+    y = y[~np.isnan(y)].reshape(-1,1)
+    if ylim:
+        y = y[(y >= ylim[0]) & (y <= ylim[1])].reshape(-1,1)
+    kde = KernelDensity(kernel='gaussian', bandwidth=bw)
+    kde.fit(y)
+
+    # Evaluate the density
+    x = np.linspace(y.min(), y.max(), 1000).reshape(-1,1)
+    log_density = kde.score_samples(x)
+    density = np.exp(log_density)  # Convert log density to actual density
+    # density = density * (y.max() - y.min()) + y.min()  # Convert density back to original scale
+    half_height = density.max() / 2
+    indices = np.where(density >= half_height)[0]
+    width = x[indices[-1]] - x[indices[0]]
+    return x, density, width[0]

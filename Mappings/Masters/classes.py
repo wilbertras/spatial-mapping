@@ -3,8 +3,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 import pickle
 import functions as ft
-import matplotlibcolors
-plt.style.use('matplotlibrc')
+
 
 class Mapping:
     """
@@ -203,14 +202,19 @@ class Mapping:
             x = np.arange(self.N)
             y = np.arange(self.M)
             Z = df_f_map
-
         X, Y = np.meshgrid(x, y)
         degree = 2
         coeffs, powers = ft.fit_poly2d_nan_safe(X, Y, Z, degree)
         X_fit, Y_fit = np.meshgrid(np.arange(self.M), np.arange(self.N))
         Z_fit = ft.eval_poly2d_on_grid(X_fit, Y_fit, coeffs, powers)
+        df_f_spatial_map = df_f_map - Z_fit
+        if self.mask_edges:
+            df_f_spatial_map[-1, :-1] -= np.nanmean(df_f_spatial_map[-1, :-1])
+            df_f_spatial_map[0, :-1] -= np.nanmean(df_f_spatial_map[0, :-1])
+            df_f_spatial_map[:, -1] -= np.nanmean(df_f_spatial_map[:, -1])
+            df_f_spatial_map[1:-1, :-1] -= np.nanmean(df_f_spatial_map[1:-1, :-1])
         self.df_f_spatial = np.zeros_like(self.df_f_fit)
-        self.df_f_spatial[self.map.flatten()] = (df_f_map - Z_fit).flatten()
+        self.df_f_spatial[self.map.flatten()] = df_f_spatial_map.flatten()
         
 def linear(x, a):
     return a*x
