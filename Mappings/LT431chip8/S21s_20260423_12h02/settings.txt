@@ -1,0 +1,1 @@
+{"color": "green", "width": 2, "fstart": 3.4, "fstop": 3.5, "subscanbw": 100, "kidpower": -110, "ifbw": 10000, "nr points": 3201, "xstart": 458, "ystart": 1174, "xsteps": [0], "ysteps": [0]}

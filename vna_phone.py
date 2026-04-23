@@ -27,10 +27,10 @@ ifbw = 10000  # Hz
 freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
-xstart =  None # 80 xsteps
-xsteps =  []
-ystart =  None # 5 ysteps
-ysteps =  []
+xstart =  602 # 20 xsteps
+xsteps =  [10, 10, 10, 11, 10]
+ystart =  1174 # 20 ysteps
+ysteps =  [0, 10, 10, 10, 11, 10, 10, 11, 10, 10, 11, 10, 10, 11, 10, 10, 10, 11, 10, 10]
 
 
 try:
@@ -231,8 +231,8 @@ while running:
             x = x_init
             y = y_init
             w = w_init
-            dx = w_init
-            dy = w_init
+            dx = dx_init
+            dy = dy_init
             colorkey_cycler = itertools.cycle(colorkeys)
             bgcolor = 'black'
             linecolor = next(colorkey_cycler)
