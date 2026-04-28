@@ -16,16 +16,16 @@ import os
 fstart = 2.8 # GHz
 fstop = 9  # GHz
 totscanbw = fstop - fstart
-num_points = 6401
-subscanbw = 1000  # MHz
+num_points = 3201
+subscanbw = 100  # MHz
 kidpower = -116 # dBm
 ifbw = 10000  # Hz
 date = datetime.today()
 calibfile = False
-xstart =  None # 20 xsteps
-xsteps =  []
-ystart =  None # 20 ysteps
-ysteps =  []
+xstart =  362 # 20 xsteps
+xsteps =  [0, 11, 10, 10, 10, 11, 10, 10, 11, 10, 10, 10, 10, 11, 10, 11, 9, 11, 10, 11]
+ystart =  1120 # 20 ysteps
+ysteps =  [0, 10, 10, 11, 10, 11, 10, 11, 10, 10, 10, 10, 11, 10, 11, 10, 10, 10, 11, 10]
 
 
 try:
