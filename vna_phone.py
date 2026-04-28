@@ -13,24 +13,19 @@ import os
 
 
 ## Input S21 parameters
-fstart = 3.4 # GHz
-fstop = 8.9  # GHz
+fstart = 2.8 # GHz
+fstop = 9  # GHz
 totscanbw = fstop - fstart
-num_points = 3201
-subscanbw = 100  # MHz
-num_subscans = int(np.ceil(totscanbw / subscanbw))
-realfstart = fstart
-realfstop = fstart + num_subscans * (subscanbw*1e-3)
-len_s21 = int(num_subscans * num_points)
-kidpower = -110 # dBm
+num_points = 6401
+subscanbw = 1000  # MHz
+kidpower = -116 # dBm
 ifbw = 10000  # Hz
-freqs = np.linspace(realfstart, realfstop, num_points*num_subscans)
 date = datetime.today()
 calibfile = False
-xstart =  602 # 20 xsteps
-xsteps =  [10, 10, 10, 11, 10]
-ystart =  1174 # 20 ysteps
-ysteps =  [0, 10, 10, 10, 11, 10, 10, 11, 10, 10, 11, 10, 10, 11, 10, 10, 10, 11, 10, 10]
+xstart =  None # 20 xsteps
+xsteps =  []
+ystart =  None # 20 ysteps
+ysteps =  []
 
 
 try:
@@ -98,6 +93,14 @@ def draw_text_boxes(text_list, bgcolor, linecolor):
             text_rect = text_surface.get_rect(center=(x + column_width // 2, y + (j * font_size) + (BOX_height // 2)))
             screen.blit(text_surface, text_rect)
 
+
+def read_battery(device):
+    output = device.shell("dumpsys battery")
+    battery_level = '??'
+    for line in output.splitlines():
+        if "level" in line:
+            battery_level = str(int(line.split(":")[1].strip()))
+    return battery_level    
 
 screen_width = 1080
 screen_height = 2240
@@ -175,6 +178,7 @@ while running:
     draw_text_boxes(text_list, colors[bgcolor], colors[linecolor])
     
     if measure:
+        battery = read_battery(device)
         if nr_xscanned < nr_x2scan and nr_x2scan > 0 and nr_yscanned == 0:
             while linetype != 'x':
                 device.shell("input keyevent KEYCODE_B")
@@ -187,7 +191,7 @@ while running:
                 pygame.time.wait(wait)
                 x += 1
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-            name = '%s/S21_x%02d.npy' % (datadir, nr_xscanned)
+            name = '%s/S21_x%02d_%s%%.npy' % (datadir, nr_xscanned, battery)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_xscanned += 1
         elif nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
@@ -202,7 +206,7 @@ while running:
                 pygame.time.wait(wait)
                 y += 1
             freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-            name = '%s/S21_y%02d.npy' % (datadir, nr_yscanned)
+            name = '%s/S21_y%02d_%s%%.npy' % (datadir, nr_yscanned, battery)
             np.save(name, np.stack((freqs, s21), axis=-1).T)
             nr_yscanned += 1
         elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
@@ -396,14 +400,14 @@ while running:
                     dx = 1
                     device.shell("input keyevent KEYCODE_Y")
                     dy = 1
-                    if nr_x2scan:
+                    if nr_x2scan and xstart:
                         while x > xstart:
                             device.shell("input keyevent KEYCODE_DPAD_LEFT")
                             x -= dx
                         while x < xstart:
                             device.shell("input keyevent KEYCODE_DPAD_RIGHT")
                             x += dx
-                    if nr_y2scan:
+                    if nr_y2scan and ystart:
                         while y > ystart:
                             device.shell("input keyevent KEYCODE_DPAD_DOWN")
                             y -= dy
@@ -429,7 +433,7 @@ while running:
                     darkname = '%s/S21_dark.npy' % (datadir)
                     settingsname = '%s/settings.txt' % (datadir)
                     dict = {'color': linecolor, 'width':w,
-                            'fstart':realfstart, 'fstop':realfstop, 'subscanbw':subscanbw, 
+                            'fstart':fstart, 'fstop':fstop, 'subscanbw':subscanbw, 
                             'kidpower':kidpower, 'ifbw':ifbw, 'nr points':num_points, 'xstart':xstart, 'ystart':ystart, 'xsteps':xsteps, 'ysteps':ysteps}
                     with open(settingsname, 'w') as file:
                         json.dump(dict, file)
