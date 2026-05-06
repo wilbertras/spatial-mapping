@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 2.8 # GHz
-fstop = 9  # GHz
+fstart = 3.3 # GHz
+fstop = 8.9  # GHz
 totscanbw = fstop - fstart
 num_points = 3201
 subscanbw = 100  # MHz
@@ -22,11 +22,10 @@ kidpower = -116 # dBm
 ifbw = 10000  # Hz
 date = datetime.today()
 calibfile = False
-xstart =  362 # 20 xsteps
-xsteps =  [0, 11, 10, 10, 10, 11, 10, 10, 11, 10, 10, 10, 10, 11, 10, 11, 9, 11, 10, 11]
-ystart =  1120 # 20 ysteps
-ysteps =  [0, 10, 10, 11, 10, 11, 10, 11, 10, 10, 10, 10, 11, 10, 11, 10, 10, 10, 11, 10]
-
+xstart =  None # 20 xsteps
+xsteps =  []
+ystart =  None # 15 ysteps
+ysteps = []
 
 try:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
