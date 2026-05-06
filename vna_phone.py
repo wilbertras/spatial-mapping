@@ -13,8 +13,8 @@ import os
 
 
 ## Input S21 parameters
-fstart = 5.25 # GHz
-fstop = 6.25  # GHz
+fstart = 3.6 # GHz
+fstop = 4.6  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 50  # MHz
@@ -22,10 +22,10 @@ kidpower = -116 # dBm
 ifbw = 1000  # Hz
 date = datetime.today()
 calibfile = False
-xstart =  404 # 12 xsteps
-xsteps =  [0, 11, 10, 9, 11, 11, 10, 10, 11, 10, 10, 10]
-ystart =  1198 # 1 ysteps
-ysteps =  [0]
+xstart =  None # 12 xsteps
+xsteps =  []
+ystart =  None # 1 ysteps
+ysteps =  []
 try:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
@@ -442,16 +442,16 @@ while running:
                         linetype = next(linetype_cycler)
                     pygame.time.wait(wait)
                     st = time.time()
-                    freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-                    et = time.time()
-                    scan_time = et - st
-                    print('Time 1 scan = %d seconds' % scan_time)
-                    print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
-                    np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
-                    print('Saved: %s' % darkname)                    
-                    fig, ax = plt.subplots()
-                    ax.plot(freqs, dark_s21)
-                    plt.show(block=True)
+                    # freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                    # et = time.time()
+                    # scan_time = et - st
+                    # print('Time 1 scan = %d seconds' % scan_time)
+                    # print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
+                    # np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
+                    # print('Saved: %s' % darkname)                    
+                    # fig, ax = plt.subplots()
+                    # ax.plot(freqs, dark_s21)
+                    # plt.show(block=True)
     pygame.display.flip()
 pygame.quit()
 sys.exit()
