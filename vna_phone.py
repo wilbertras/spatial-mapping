@@ -13,20 +13,19 @@ import os
 
 
 ## Input S21 parameters
-fstart = 3.3 # GHz
-fstop = 8.9  # GHz
+fstart = 5.25 # GHz
+fstop = 6.25  # GHz
 totscanbw = fstop - fstart
-num_points = 3201
-subscanbw = 100  # MHz
+num_points = 6401
+subscanbw = 50  # MHz
 kidpower = -116 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 date = datetime.today()
 calibfile = False
-xstart =  None # 20 xsteps
-xsteps =  []
-ystart =  None # 15 ysteps
-ysteps = []
-
+xstart =  404 # 12 xsteps
+xsteps =  [0, 11, 10, 9, 11, 11, 10, 10, 11, 10, 10, 10]
+ystart =  1198 # 1 ysteps
+ysteps =  [0]
 try:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
