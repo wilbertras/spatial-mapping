@@ -177,47 +177,111 @@ while running:
     
     if measure:
         battery = read_battery(device)
-        if nr_xscanned < nr_x2scan and nr_x2scan > 0 and nr_yscanned == 0:
-            while linetype != 'x':
-                device.shell("input keyevent KEYCODE_B")
-                linetype = next(linetype_cycler)
-            pygame.time.wait(wait)
-            xstep = xsteps[nr_xscanned]
-            print('Scan %d/%d, stepping %d' % (nr_xscanned+1, nr_x2scan, xstep))
-            for i in range(xstep):
-                device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+        if square:
+            if nr_xscanned < nr_x2scan and nr_yscanned < nr_y2scan and nr_x2scan > 0 and nr_y2scan > 0:
+                while linetype != 'both':
+                    device.shell("input keyevent KEYCODE_B")
+                    linetype = next(linetype_cycler)
                 pygame.time.wait(wait)
-                x += 1
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-            name = '%s/S21_x%02d_%s%%.npy' % (datadir, nr_xscanned, battery)
-            np.save(name, np.stack((freqs, s21), axis=-1).T)
-            nr_xscanned += 1
-        elif nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
-            while linetype != 'y':
-                device.shell("input keyevent KEYCODE_B")
-                linetype = next(linetype_cycler)
-            pygame.time.wait(wait)
-            ystep = ysteps[nr_yscanned]
-            print('Scan %d/%d, stepping %d' % (nr_yscanned+1, nr_y2scan, ystep))
-            for i in range(ystep):
-                device.shell("input keyevent KEYCODE_DPAD_UP")
+                xstep = xsteps[nr_xscanned]
+                ystep = ysteps[nr_yscanned]
+                print('Scan %d/%d, stepping %d in X and %d in Y' % (nr_xscanned+1, nr_x2scan, xstep, ystep))
+                if xstep > 0:
+                    for i in range(xstep):
+                        device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                        pygame.time.wait(wait)
+                        x += 1
+                elif xstep < 0:
+                    for i in range(-xstep):
+                        device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                        pygame.time.wait(wait)
+                        x -= 1
+                if ystep > 0:
+                    for i in range(ystep):
+                        device.shell("input keyevent KEYCODE_DPAD_UP")
+                        pygame.time.wait(wait)
+                        y += 1
+                elif ystep < 0:
+                    for i in range(-ystep):
+                        device.shell("input keyevent KEYCODE_DPAD_DOWN")
+                        pygame.time.wait(wait)
+                        y -= 1
+                else:
+                    continue
+                freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                name = '%s/S21_x%02d_y%02d_%s%%.npy' % (datadir, nr_xscanned, nr_yscanned, battery)
+                np.save(name, np.stack((freqs, s21), axis=-1).T)
+                nr_xscanned += 1
+                nr_yscanned += 1
+            elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
+                measure = 0
+                while linetype != 'both':
+                    device.shell("input keyevent KEYCODE_B")
+                    linetype = next(linetype_cycler)
                 pygame.time.wait(wait)
-                y += 1
-            freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
-            name = '%s/S21_y%02d_%s%%.npy' % (datadir, nr_yscanned, battery)
-            np.save(name, np.stack((freqs, s21), axis=-1).T)
-            nr_yscanned += 1
-        elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
-            measure = 0
-            while linetype != 'both':
+                print('Helemaal f*cking klaar met de meting')
+            else:
+                measure = 0
                 device.shell("input keyevent KEYCODE_B")
-                linetype = next(linetype_cycler)
-            pygame.time.wait(wait)
-            print('Helemaal f*cking klaar met de meting')
+                print('WARNING: Measurement stopped but might not be complete')
         else:
-            measure = 0
-            device.shell("input keyevent KEYCODE_B")
-            print('WARNING: Measurement stopped but might not be complete')
+            if nr_xscanned < nr_x2scan and nr_x2scan > 0 and nr_yscanned == 0:
+                while linetype != 'x':
+                    device.shell("input keyevent KEYCODE_B")
+                    linetype = next(linetype_cycler)
+                pygame.time.wait(wait)
+                xstep = xsteps[nr_xscanned]
+                print('Scan %d/%d, stepping %d' % (nr_xscanned+1, nr_x2scan, xstep))
+                if xstep > 0:
+                    for i in range(xstep):
+                        device.shell("input keyevent KEYCODE_DPAD_RIGHT")
+                        pygame.time.wait(wait)
+                        x += 1
+                elif xstep < 0:
+                    for i in range(-xstep):
+                        device.shell("input keyevent KEYCODE_DPAD_LEFT")
+                        pygame.time.wait(wait)
+                        x -= 1
+                else:
+                    continue
+                freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                name = '%s/S21_x%02d_%s%%.npy' % (datadir, nr_xscanned, battery)
+                np.save(name, np.stack((freqs, s21), axis=-1).T)
+                nr_xscanned += 1
+            elif nr_xscanned == nr_x2scan and nr_yscanned < nr_y2scan and nr_y2scan > 0:
+                while linetype != 'y':
+                    device.shell("input keyevent KEYCODE_B")
+                    linetype = next(linetype_cycler)
+                pygame.time.wait(wait)
+                ystep = ysteps[nr_yscanned]
+                print('Scan %d/%d, stepping %d' % (nr_yscanned+1, nr_y2scan, ystep))
+                if ystep > 0:
+                    for i in range(ystep):
+                        device.shell("input keyevent KEYCODE_DPAD_UP")
+                        pygame.time.wait(wait)
+                        y += 1
+                elif ystep < 0:
+                    for i in range(-ystep):
+                        device.shell("input keyevent KEYCODE_DPAD_DOWN")
+                        pygame.time.wait(wait)
+                        y -= 1
+                else:
+                    continue
+                freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
+                name = '%s/S21_y%02d_%s%%.npy' % (datadir, nr_yscanned, battery)
+                np.save(name, np.stack((freqs, s21), axis=-1).T)
+                nr_yscanned += 1
+            elif nr_xscanned == nr_x2scan and nr_yscanned == nr_y2scan:
+                measure = 0
+                while linetype != 'both':
+                    device.shell("input keyevent KEYCODE_B")
+                    linetype = next(linetype_cycler)
+                pygame.time.wait(wait)
+                print('Helemaal f*cking klaar met de meting')
+            else:
+                measure = 0
+                device.shell("input keyevent KEYCODE_B")
+                print('WARNING: Measurement stopped but might not be complete')
 
     event = pygame.event.poll()
 
@@ -333,10 +397,9 @@ while running:
                 bgcolor = 'black'
                 linecolor = next(colorkey_cycler)
         if event.key == pygame.K_b:
-            if not square:
-                device.shell("input keyevent KEYCODE_B")
-                linetype = next(linetype_cycler)
-                pygame.time.wait(wait)
+            device.shell("input keyevent KEYCODE_B")
+            linetype = next(linetype_cycler)
+            pygame.time.wait(wait)
         if event.key == pygame.K_l:
             if linetype == 'x':
                 if not len(xsteps):
@@ -360,8 +423,26 @@ while running:
                         yprev = copy(y)
                 print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
                 print('ysteps = ', ysteps)
+            elif square:
+                if not len(xsteps) and not len(ysteps):
+                    xsteps.append(0)
+                    ysteps.append(0)
+                    xstart = copy(int(x))
+                    ystart = copy(int(y))
+                    xprev = copy(int(x))
+                    yprev = copy(int(y))
+                else:
+                    if int(x - xprev) and int(y - yprev):
+                        xsteps.append(int(x - xprev))
+                        ysteps.append(int(y - yprev))
+                        xprev = copy(x)
+                        yprev = copy(y)
+                print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
+                print('xsteps = ', xsteps)
+                print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
+                print('ysteps = ', ysteps)
             else:
-                print('WARNING: steps can only be added when having a single line either in x or y')
+                print('WARNING: steps can only be added when having a single line either in x or y of when in square mode')
                 print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
                 print('xsteps = ', xsteps)
                 print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
@@ -390,9 +471,12 @@ while running:
                     nr_y2scan = len(ysteps)
                     nr_xscanned = 0
                     nr_yscanned = 0
-                    while linetype != 'both':
-                        device.shell("input keyevent KEYCODE_B")
-                        linetype = next(linetype_cycler)
+                    if square:
+                        pass
+                    else:
+                        while linetype != 'both':
+                            device.shell("input keyevent KEYCODE_B")
+                            linetype = next(linetype_cycler)
                     pygame.time.wait(wait)
                     device.shell("input keyevent KEYCODE_X")
                     dx = 1
