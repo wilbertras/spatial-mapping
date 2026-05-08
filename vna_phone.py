@@ -13,13 +13,13 @@ import os
 
 
 ## Input S21 parameters
-fstart = 3.6 # GHz
-fstop = 4.6  # GHz
+fstart = 4.5 # GHz
+fstop = 7.0  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
-subscanbw = 50  # MHz
+subscanbw = 100  # MHz
 kidpower = -116 # dBm
-ifbw = 1000  # Hz
+ifbw = 10000  # Hz
 date = datetime.today()
 calibfile = False
 xstart =  None # 12 xsteps
@@ -100,8 +100,8 @@ def read_battery(device):
             battery_level = str(int(line.split(":")[1].strip()))
     return battery_level    
 
-screen_width = 1080
-screen_height = 2240
+screen_width = 1440
+screen_height = 3216
 x_centre = int(screen_width / 2)
 y_centre = int(screen_height / 2)
 length_line_mm = 50
@@ -139,6 +139,7 @@ inverted_cycler = itertools.cycle(false_true)
 inverted = next(inverted_cycler)
 measure = False
 wait = 1
+wait_before_scan = 500
 linetypes = ['both', 'none', 'x', 'y']
 linetype_cycler = itertools.cycle(linetypes)
 linetype = next(linetype_cycler)
@@ -196,6 +197,8 @@ while running:
                         device.shell("input keyevent KEYCODE_DPAD_LEFT")
                         pygame.time.wait(wait)
                         x -= 1
+                else:
+                    pass
                 if ystep > 0:
                     for i in range(ystep):
                         device.shell("input keyevent KEYCODE_DPAD_UP")
@@ -207,7 +210,8 @@ while running:
                         pygame.time.wait(wait)
                         y -= 1
                 else:
-                    continue
+                    pass
+                pygame.time.wait(wait_before_scan)
                 freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
                 name = '%s/S21_x%02d_y%02d_%s%%.npy' % (datadir, nr_xscanned, nr_yscanned, battery)
                 np.save(name, np.stack((freqs, s21), axis=-1).T)
@@ -243,7 +247,8 @@ while running:
                         pygame.time.wait(wait)
                         x -= 1
                 else:
-                    continue
+                    pass
+                pygame.time.wait(wait_before_scan)
                 freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
                 name = '%s/S21_x%02d_%s%%.npy' % (datadir, nr_xscanned, battery)
                 np.save(name, np.stack((freqs, s21), axis=-1).T)
@@ -266,7 +271,8 @@ while running:
                         pygame.time.wait(wait)
                         y -= 1
                 else:
-                    continue
+                    pass
+                pygame.time.wait(wait_before_scan)
                 freqs, s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
                 name = '%s/S21_y%02d_%s%%.npy' % (datadir, nr_yscanned, battery)
                 np.save(name, np.stack((freqs, s21), axis=-1).T)
@@ -401,29 +407,7 @@ while running:
             linetype = next(linetype_cycler)
             pygame.time.wait(wait)
         if event.key == pygame.K_l:
-            if linetype == 'x':
-                if not len(xsteps):
-                    xsteps.append(0)
-                    xstart = copy(int(x))
-                    xprev = copy(int(x))
-                else:
-                    if int(x - xprev):
-                        xsteps.append(int(x - xprev))
-                        xprev = copy(x)
-                print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
-                print('xsteps = ', xsteps)
-            elif linetype == 'y':
-                if not len(ysteps):
-                    ysteps.append(0)
-                    ystart = copy(int(y))
-                    yprev = copy(int(y))
-                else:
-                    if int(y - yprev):
-                        ysteps.append(int(y - yprev))
-                        yprev = copy(y)
-                print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
-                print('ysteps = ', ysteps)
-            elif square:
+            if square:
                 if not len(xsteps) and not len(ysteps):
                     xsteps.append(0)
                     ysteps.append(0)
@@ -432,7 +416,7 @@ while running:
                     xprev = copy(int(x))
                     yprev = copy(int(y))
                 else:
-                    if int(x - xprev) and int(y - yprev):
+                    if int(x - xprev) or int(y - yprev):
                         xsteps.append(int(x - xprev))
                         ysteps.append(int(y - yprev))
                         xprev = copy(x)
@@ -442,11 +426,34 @@ while running:
                 print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
                 print('ysteps = ', ysteps)
             else:
-                print('WARNING: steps can only be added when having a single line either in x or y of when in square mode')
-                print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
-                print('xsteps = ', xsteps)
-                print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
-                print('ysteps = ', ysteps)
+                if linetype == 'x':
+                    if not len(xsteps):
+                        xsteps.append(0)
+                        xstart = copy(int(x))
+                        xprev = copy(int(x))
+                    else:
+                        if int(x - xprev):
+                            xsteps.append(int(x - xprev))
+                            xprev = copy(x)
+                    print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
+                    print('xsteps = ', xsteps)
+                elif linetype == 'y':
+                    if not len(ysteps):
+                        ysteps.append(0)
+                        ystart = copy(int(y))
+                        yprev = copy(int(y))
+                    else:
+                        if int(y - yprev):
+                            ysteps.append(int(y - yprev))
+                            yprev = copy(y)
+                    print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
+                    print('ysteps = ', ysteps)
+                else:
+                    print('WARNING: steps can only be added when having a single line either in x or y')
+                    print('xstart = ', xstart, '# %d xsteps' % (len(xsteps)))
+                    print('xsteps = ', xsteps)
+                    print('ystart = ', ystart, '# %d ysteps' % (len(ysteps)))
+                    print('ysteps = ', ysteps)
         if event.key == pygame.K_s:
             device.shell("input keyevent KEYCODE_S")
             square = next(square_cycler)
@@ -524,7 +531,7 @@ while running:
                     while linetype != 'none':
                         device.shell("input keyevent KEYCODE_B")
                         linetype = next(linetype_cycler)
-                    pygame.time.wait(wait)
+                    pygame.time.wait(wait_before_scan)
                     st = time.time()
                     freqs, dark_s21 = f.get_s21(fstart, fstop, subscanbw, num_points, kidpower, ifbw, calibfile)
                     et = time.time()
