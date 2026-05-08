@@ -13,13 +13,13 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4.5 # GHz
-fstop = 7.0  # GHz
+fstart = 3.2 # GHz
+fstop = 4.5  # GHz
 totscanbw = fstop - fstart
 num_points = 6401
 subscanbw = 100  # MHz
 kidpower = -116 # dBm
-ifbw = 10000  # Hz
+ifbw = 1000  # Hz
 date = datetime.today()
 calibfile = False
 xstart =  None # 12 xsteps
@@ -537,7 +537,10 @@ while running:
                     et = time.time()
                     scan_time = et - st
                     print('Time 1 scan = %d seconds' % scan_time)
-                    print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
+                    if square:
+                        print('Expected duration measurement: %d minutes' % ((nr_x2scan) * scan_time / 60))
+                    else:
+                        print('Expected duration measurement: %d minutes' % ((nr_x2scan + nr_y2scan) * scan_time / 60))
                     np.save(darkname, np.stack((freqs, dark_s21), axis=-1).T)
                     print('Saved: %s' % darkname)                    
                     fig, ax = plt.subplots()
