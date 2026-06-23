@@ -10,7 +10,7 @@ class Mapping:
     Mapping class to handle the mapping of data.
     """
 
-    def __init__(self, file, mask_edges=False, type='', Q=50e3, min_lw_spacing=2, deg=2, offset=True):
+    def __init__(self, file, mask_edges=False, type='', Q=50e3, min_lw_spacing=2, deg=2, offset=True, coeff=[]):
         self.file = file
         with open(self.file, 'rb') as f:
             arr = pickle.load(f)
@@ -20,6 +20,7 @@ class Mapping:
         self.offset = offset
         self.type = type
         self.mask_edges = mask_edges
+        self.coeff = coeff
         self.initialize(arr)
 
     def initialize(self, arr):
@@ -97,15 +98,18 @@ class Mapping:
         else:
             mask = nanmask
         if self.offset:
-            self.coeff = np.polyfit(design[mask], meas[mask], self.deg)
+            if not len(self.coeff):
+                self.coeff = np.polyfit(design[mask], meas[mask], self.deg)
             return np.polyval(self.coeff, design)
         else:
             if self.deg == 1:
-                self.coeff, _ = curve_fit(linear, design[mask], meas[mask])           
+                if not len(self.coeff):
+                    self.coeff, _ = curve_fit(linear, design[mask], meas[mask])           
                 return linear(design, *self.coeff)
-            elif self.deg == 2:
-                self.coeff, _ = curve_fit(quadratic, design[mask], meas[mask])           
-                return quadratic(design, *self.coeff)
+            elif self.deg == 2 and not len(self.coeff):
+                if not len(self.coeff):
+                    self.coeff, _ = curve_fit(quadratic, design[mask], meas[mask])           
+                return quadratic(design, *self.coeff)          
     
 
     def spacings(self, Q, nr_lw_spacing):

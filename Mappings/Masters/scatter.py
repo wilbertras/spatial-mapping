@@ -18,9 +18,13 @@ dir = r'Mappings/Masters/chips/'
 offset = True
 deg = 2
 LT361chip7 = Mapping(dir + 'LT361chip7_master.pkl', Q=Q, min_lw_spacing=chi, deg=deg, offset=offset)
+LT361chip4 = Mapping(dir + 'LT361chip4_master.pkl', Q=Q, min_lw_spacing=chi, deg=deg, offset=offset, mask_edges=True)
+LT361chip8 = Mapping(dir + 'LT361chip8_master.pkl', Q=Q, min_lw_spacing=chi, deg=deg, offset=offset, mask_edges=True)
 LT402chip6 = Mapping(dir + 'LT402chip6_master.pkl', Q=Q, min_lw_spacing=chi, deg=deg, offset=offset, mask_edges=True)
 LT402chip6_trim = Mapping(dir + 'LT402chip6_master.pkl', type='trim', Q=Q, min_lw_spacing=chi, deg=deg, offset=offset, mask_edges=True)
 chips = [LT361chip7, LT402chip6]
+# chips = [LT361chip7, LT361chip4]
+# chips = [LT361chip7, LT361chip8]
 # chips = [LT402chip1, LT361chip7, LT402chip6]
 labels = ['A', 'B']
 cs = 'bb'
@@ -179,5 +183,5 @@ secax.set_ylim(ylim)
 ax.set_ylim(ylim)
 
 
-plt.savefig('Mappings/Masters/figures/scatter_before_after.pdf')
+# plt.savefig('Mappings/Masters/figures/scatter_before_after.pdf')
 plt.show()

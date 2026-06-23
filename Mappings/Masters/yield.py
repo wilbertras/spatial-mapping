@@ -112,8 +112,6 @@ ax2 = ax.secondary_xaxis('top')
 ax2.set_xticks(dfticks)
 ax2.set_xticklabels(df_fticks)
 ax2.set_xlabel('$\lambda_M$')
-sigma = np.nanstd(chips[1].df_f)
-ft.p0_numeric(1, 50e3, 1, sigma, ylds_at, nr_iter=100, fs=chips[1].fd)
 x, kernel, fwhm = ft.kde(lambdas[:lo], bw=1)
 std = fwhm/Q/2.355
 ax.plot(x, kernel*len(lambdas[:lo])*(bins[1]-bins[0]), c='k', ls='--', lw=1, label='KDE')
@@ -125,21 +123,34 @@ ax.legend(loc='center right', handlelength=1)
 
 ax = axes['d']
 thresholds = np.arange(1, 11)
+sigma1 = np.nanstd(chips[0].df_f)
+sigma1 = 1e-3
+sigma2 = np.nanstd(chips[1].df_f)
+sigma2 = 2e-4
+print('sigma1: %.2G, sigma2: %.2G' % (sigma1, sigma2))
 ylds_before = []
+ylds_before_analytic = []
 ylds_after = []
+ylds_after_analytic = []
 for threshold in thresholds:
     ylds_before.append(chips[0].spacings(Q, threshold)[2])
     ylds_after.append(chips[1].spacings(Q, threshold)[2])
-ax.plot(thresholds, np.array(ylds_before), lw=1, label='Before trimming', c=cs[0])
-ax.plot(thresholds, np.array(ylds_after), lw=1, label='After trimming', c=cs[1])	
+    ylds_before_analytic.append(ft.p0_numeric(1, Q, 1, sigma1, threshold, nr_iter=100, fs=chips[0].fd))
+    ylds_after_analytic.append(ft.p0_numeric(1, Q, 1, sigma2, threshold, nr_iter=100, fs=chips[1].fd))
+ax.plot(thresholds, np.array(ylds_before), lw=1, c=cs[0])
+ax.plot(thresholds, np.array(ylds_after), lw=1, c=cs[1])	
+# ax.plot(thresholds, np.array(ylds_before_analytic), lw=1, label='Before trimming', c=cs[0], ls='--')
+ax.plot(thresholds, np.array(ylds_after_analytic), lw=1, label='$P_0(\sigma=2\\times 10^{-4})$', c='k', ls='--')	
+ax.annotate('$P_0(\sigma=2\\times 10^{-4})$', xy=(4.5, 0.8), fontsize=8)
 yld_before = ylds_before[ylds_at-1]
 yld_after = ylds_after[ylds_at-1]
-ax.axvline(ylds_at, c='r', ls='-', lw=1, zorder=0, label='$\lambda_M^\mathrm{min}$')
+# ax.legend(loc='center right', handlelength=1)
+ax.axvline(ylds_at, c='r', ls='-', lw=1, zorder=0)
 ax.scatter(ylds_at, yld_before, c=cs[0], s=10)
 ax.scatter(ylds_at, yld_after, c=cs[1], s=10)
 ax.annotate('%d\%%' % (yld_before*1e2), xy=(ylds_at, yld_before), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[0])
 ax.annotate('%d\%%' % (yld_after*1e2), xy=(ylds_at, yld_after), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[1])
-print('yields: %.2f %% and %.2f %% ' % (yld_before, yld_after))
+print('yields: %d %% and %d %% ' % (yld_before*100, yld_after*100))
 lim = [0, 10]
 ax.set_xlim(lim)
 ticks = np.arange(0, 11, 5)
@@ -154,7 +165,7 @@ ax2.set_xticklabels(ticks/Q)
 ax2.set_xticks(tickss, minor=True)
 ax2.set_xlabel('$\lambda_M^\mathrm{min}$')
 ax.set_xlabel('$\lambda_M^\mathrm{min} \\times Q$ $(\mathrm{lw})$')
-ax.set_ylabel('$P_0$')
+ax.set_ylabel('$\mathrm{yield}$')
 # ax.legend()
 
 
