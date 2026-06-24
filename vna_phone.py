@@ -13,17 +13,17 @@ import os
 
 
 ## Input S21 parameters
-fstart = 4.5 # GHz
-fstop = 7  # GHz
+fstart = 3.9 # GHz
+fstop = 8  # GHz
 totscanbw = fstop - fstart
-num_points = 6401
+num_points = 3201
 subscanbw = 100  # MHz
 kidpower = -116 # dBm
 ifbw = 1000  # Hz
 date = datetime.today()
 calibfile = False
-xstart =  None # 12 xsteps
-xsteps =  []
+xstart =  602 # 70 xsteps
+xsteps =  [0, 3, 3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3, 2, 2]
 ystart =  None # 1 ysteps
 ysteps =  []
 try:
