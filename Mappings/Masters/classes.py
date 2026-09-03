@@ -124,6 +124,8 @@ class Mapping:
         suff_spaced[1:] -= too_close
         suff_spaced[:-1] -= too_close
         suff_spaced = (suff_spaced==True)
+        # print('above 8.2 GHz', len(sorted_f0s>8.2))
+        suff_spaced[sorted_f0s>8.2] = False
         return rel_diffs, suff_spaced, np.sum(suff_spaced) / self.nr
 
     def plot_design_vs_meas(self, ax=None, flim=[None, None]):

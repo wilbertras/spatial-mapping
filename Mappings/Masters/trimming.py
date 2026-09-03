@@ -31,7 +31,7 @@ popt, pcov = curve_fit(poly, meas[~nanmask], fingers[~nanmask])
 fit_fingers = poly(meas, *popt)   
 
 df_name = 'LT402_design_simulations'
-dir = r'C:\Users\wilbertr\ownCloud2\PhD\PhD\PythonProjects\sonnet\LT402 Design/'
+dir = r'C:\Users\wilbertr\nextcloud\PhD\PhD\PythonProjects\sonnet\LT402 Design/'
 Lcs_at_Q_design = np.load(dir + df_name + '_Lc.npy')
 f0s_at_Q_design = np.load(dir + df_name + '_f0.npy')*1e-9
 df = pd.read_pickle(dir + '/' + df_name)
@@ -67,13 +67,13 @@ ax_inset.set_ylim(y_min, y_max)
 ax_inset.set_xticks([])
 ax_inset.set_yticks([])
 ax.set_ylabel('$F$ $(\mathrm{GHz})$')
-ax.set_xlabel('Sorted KID index')
+ax.set_xlabel('Resonance index $i$')
 
 s = 5
 a=.5
 ax = axes['c']
-# ax.set_title('$F_D^\mathrm{trim} \\rightarrow L_\mathrm{IDC}^\mathrm{trim}$')
-fs = np.linspace(0, 10*97, 11, endpoint=True)
+# ax.set_title('$F_D^\mathrm{trim} \\rightarrow l_C^\mathrm{trim}$')
+fs = np.linspace(10, 10*97, 11, endpoint=True)
 for i, finger in enumerate(fs):
     if not i:
         ax.axhline(finger, c='gray', ls='--', alpha=1, lw=.5, label='Fingers', zorder=0)
@@ -87,8 +87,8 @@ ax.scatter(meas, fingers, alpha=a, s=s, label='$F_M$', c='o', zorder=1)
 ax.scatter(trimdesign, newfingers, c='p', ls='-', alpha=a, s=s, label='$F_D^\mathrm{trim}$', zorder=1)
 # ax.legend(bbox_to_anchor=(0.5, 1.05), loc='lower center',
 #           ncols=2, mode="expand", borderaxespad=0., ax=axes['a'])
-ax.set_ylabel('$L_{IDC}$ $(\mathrm{\mu m})$')
-ax.set_xlabel('$F$ $(\mathrm{GHz})$')
+ax.set_ylabel('$l_C$ $(\mathrm{\mu m})$')
+ax.set_xlabel('$f$ $(\mathrm{GHz})$')
 ax.set_xlim(3.5, 8.5)
 ax.grid(False)
 ax.set_ylim(0, fs[-1])
@@ -115,15 +115,16 @@ ax_inset.set_ylim(y_min, y_max)
 ax_inset.set_xticks([])
 ax_inset.set_yticks([])
 
-ax = axes['b']
-# ax.set_title('$\mathrm{Difference}$')
-_ = ax.hist(trims, bins='auto', fc='p')
-ax.set_xlabel('$L_\mathrm{IDC}^\mathrm{trim}-L_\mathrm{IDC}$ $(\mathrm{\mu m})$')
-ax.set_ylabel('$\mathrm{Counts}$')
 ax = axes['d']
 # ax.set_title('$\mathrm{Difference}$')
+_ = ax.hist(trims, bins='auto', fc='p')
+print(np.sort(trims[~np.isnan(trims)])[-10:])
+ax.set_xlabel('$l_C^\mathrm{trim}-l_C$ $(\mathrm{\mu m})$')
+ax.set_ylabel('$\mathrm{Counts}$')
+ax = axes['b']
+# ax.set_title('$\mathrm{Difference}$')
 ax.hist((trimdesign-meas)*1e3, bins='auto', fc='p')
-ax.set_xlabel('$F_D^\mathrm{trim}-F_D$ $(\mathrm{MHz})$')
+ax.set_xlabel('$F_D^\mathrm{trim}-F_M$ $(\mathrm{MHz})$')
 ax.set_ylabel('$\mathrm{Counts}$')
 ax = axes['e']
 img = plt.imread(r'Mappings\Masters/figures/trim.png')
@@ -132,5 +133,6 @@ ax.imshow(img, aspect='equal')
 ax.set_xticks([])
 ax.set_yticks([])
 fig.legend(loc='upper center', bbox_to_anchor=(.83, .2), ncol=3, frameon=True, columnspacing=0.5, handlelength=1)
-# plt.savefig(r'Mappings\Masters/figures/trimming.pdf')
+plt.savefig(r'Mappings\Masters/figures/trimming.pdf', dpi=600)
+plt.savefig(r'Mappings\Masters/figures/trimming.svg', transparent=True)
 plt.show()

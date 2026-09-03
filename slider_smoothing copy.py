@@ -19,7 +19,7 @@ smooth_d2s21 = savgol_filter(d2s21, n0, deg0)
 smooth_s21 = savgol_filter(s21, n0, deg0)
 locs = find_peaks(smooth_d2s21, height=mph0, prominence=mpp0)[0] + 1
 
-fig, ax = plt.subplots(3, 1, figsize=(8,8), constrained_layout=True)
+fig, ax = plt.subplots(3, 1, figsize=(8,8), constrained_layout=True, sharex=True)
 fig.subplots_adjust(bottom=0.4)
 ax[0].plot(freqs[:-2], smooth_d2s21, color='gray')
 ax[1].plot(freqs, s21, color='gray')

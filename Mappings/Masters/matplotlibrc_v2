@@ -7,6 +7,9 @@ font.serif : Computer Modern Roman
 font.size: 10 # small=10, medium=12, large=14, x-large=16
 lines.linewidth : 1.0
 
+pdf.fonttype: 42
+ps.fonttype: 42
+
 patch.linewidth: 0.5
 patch.facecolor: blue
 patch.edgecolor: eeeeee

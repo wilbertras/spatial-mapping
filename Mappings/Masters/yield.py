@@ -20,7 +20,12 @@ dir = 'Mappings/Masters/chips/'
 LT402chip6 = Mapping(dir + 'LT402chip6_master.pkl')
 LT402chip6_trim = Mapping(dir + 'LT402chip6_master.pkl', type='trim')
 f, s21 = np.load(dir + 'LT402chip6_S21_dark.npy')
-f_trim, s21_trim = np.load(dir + 'LT402chip6_S21_dark_trim.npy')
+f_trim_body, s21_trim_body = np.load(dir + 'LT402chip6_S21_dark_trim.npy')
+f_trim_outliers, s21_trim_outliers = np.load(dir + 'LT402chip6_S21_dark_trim_outliers.npy')
+outliers = f_trim_outliers > f_trim_body[-1]
+s21_trim_outliers -= (s21_trim_outliers[outliers][0] - s21_trim_body[-1])
+f_trim = np.concatenate((f_trim_body, f_trim_outliers[outliers]))
+s21_trim = np.concatenate((s21_trim_body, s21_trim_outliers[outliers]))
 dflim = [0, 100]
 dfticks = np.arange(0, 101, 25)
 df_flim = [0, 100/Q]
@@ -29,21 +34,14 @@ bins = np.linspace(dflim[0], dflim[1], 40)
 chips = [LT402chip6, LT402chip6_trim]
 labels = ['C', 'C, trimmed']
 cs = 'bp'
-slim = [-40, 5]
-inset_slim = [-35, 0]
+slim = [-70, 5]
+inset_slim = slim
 flim = [4, 8.2]
-inset_flimt = [4.7, 4.9]
+inset_flimt = [4.5, 4.9]
 fmt = LT402chip6_trim.fm
 fdt  = LT402chip6_trim.fd
-ldt = np.nanmean(np.diff(fdt[:500])/fdt[:499]*Q)
-ldt2 = np.nanmean(np.diff(fdt[600:1000])/fdt[600:999]*Q)
-print(ldt, ldt2)
-fm = LT402chip6.fm
-kid_start = np.nanargmin(np.abs(fmt-inset_flimt[0]))
-kid_end = np.nanargmin(np.abs(fmt-inset_flimt[1]))
-inset_flim = [fm[kid_start], fm[kid_end]]
-pos = 'adbce'
-fig, axes = plt.subplot_mosaic('aaabbb;ccddee', figsize=(18.5/2.54,12/2.54), constrained_layout=True)
+pos = 'adce'
+fig, axes = plt.subplot_mosaic('aaaaaa;bbbbbb;ccddee', figsize=(18.5/2.54,18.5/2.54), constrained_layout=True)
 for i, a in enumerate(pos):
     if a in 'cde':
         x = -0.3
@@ -53,37 +51,29 @@ for i, a in enumerate(pos):
 ax = axes['a']
 f_interp = np.linspace(f[0], f[-1], len(f), endpoint=True)
 s21_fit = np.interp(f_interp, [f[0], f[-1]], [s21[0], s21[-1]])
-ax.plot(f, s21-s21_fit, label='S21', lw=.01, color=cs[0], zorder=0)
-ax.set_xlim(flim)
-ax.set_ylim(slim)
-ax.set_ylabel('$|S_{21}|^2$')
-ax.set_xlabel('$f$ $(\mathrm{GHz})$')
-ax.set_title('Before trimming')
-ax_inset = inset_axes(ax, width="40%", height="50%", loc='lower right')
-ax_inset.plot(f, s21-s21_fit, label='S21', lw=.2, color=cs[0])
-ax_inset.set_xlim(inset_flim)
-ax_inset.set_ylim(slim)
-ax_inset.set_xticks([])
-ax_inset.set_yticks([])
-ax.add_patch(plt.Rectangle((inset_flim[0], inset_slim[0]), inset_flim[1] - inset_flim[0], inset_slim[1] - inset_slim[0], 
-                                   ec='k', fc='None', alpha=1, transform=ax.transData, lw=1))  # Changed alpha to 0.5
-ax = axes['b']
-f_interp = np.linspace(f_trim[0], f_trim[-1], len(f_trim), endpoint=True)
-s21_fit = np.interp(f_interp, [f_trim[0], f_trim[-1]], [s21_trim[0], s21_trim[-1]])
-ax.plot(f_trim, s21_trim-s21_fit, label='S21', c=cs[1], lw=.01, zorder=0)
+ax.plot(f, s21-s21_fit, lw=.1, color=cs[0])
+f_interp_trim = np.linspace(f_trim[0], f_trim[-1], len(f_trim), endpoint=True)
+s21_fit_trim = np.interp(f_interp_trim, [f_trim[0], f_trim[-1]], [s21_trim[0], s21_trim[-1]])
+ax.plot(f_trim, s21_trim-s21_fit_trim-35, c=cs[1], lw=.1)
 ax.set_ylim(slim)
 ax.set_xlim(flim)
 ax.set_xlabel('$f$ $(\mathrm{GHz})$')
-ax.set_ylabel('$|S_{21}|^2$')
-ax.set_title('After trimming')
-ax_inset = inset_axes(ax, width="40%", height="50%", loc='lower right')
-ax_inset.plot(f, s21_trim-s21_fit, label='S21', lw=.2, color=cs[1])
-ax_inset.set_xlim(inset_flimt)
-ax_inset.set_ylim(slim)
-ax_inset.set_xticks([])
-ax_inset.set_yticks([])
+ax.set_ylabel('$|S_{21}|^2 (\mathrm{dB})$')
+# Create a custom legend
+ax.legend(handles=[plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cs[0], markersize=8),
+                   plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cs[1], markersize=8)], 
+          labels=['Before trimming', 'After trimming'], loc='upper center', bbox_to_anchor=(0.5, 1.15), 
+          handletextpad=0.5, frameon=True, ncols=2,
+          )
 ax.add_patch(plt.Rectangle((inset_flimt[0], inset_slim[0]), inset_flimt[1] - inset_flimt[0], inset_slim[1] - inset_slim[0], 
-                                   ec='k', fc='None', alpha=1, transform=ax.transData, lw=1))  # Changed alpha to 0.5
+                                   ec='k', fc='None', alpha=1, transform=ax.transData, lw=.5, zorder=10))  # Changed alpha to 0.5
+ax = axes['b']
+ax.plot(f, s21-s21_fit, label='S21', lw=.5, color=cs[0], zorder=0)
+ax.plot(f_trim, s21_trim-s21_fit_trim-35, label='S21', c=cs[1], lw=.5, zorder=0)
+ax.set_ylim(slim)
+ax.set_xlim(inset_flimt)
+ax.set_xlabel('$f$ $(\mathrm{GHz})$')
+ax.set_ylabel('$|S_{21}|^2 (\mathrm{dB})$')
 
 ax = axes['c']
 _ = ax.hist(chips[0].rel_spacings, bins, facecolor=cs[0], alpha=.75)
@@ -91,37 +81,38 @@ ax.set_xlim(dflim)
 ax.set_xticks(dfticks)
 ax.axvline(ylds_at, c='r', ls='-', lw=1, label='Min. spacing', zorder=5)
 ax.set_ylabel('$\mathrm{Counts}$')   
-ax.set_xlabel('$\lambda_M \\times Q$ $(\mathrm{lw})$')
+ax.set_xlabel('$\lambda_M \\times Q_l$ $(\mathrm{MHz})$')
 ax2 = ax.secondary_xaxis('top')
 ax2.set_xticks(dfticks)
 ax2.set_xticklabels(df_fticks)
 ax2.set_xlabel('$\lambda_M$')
 
-ax = axes['e']
+ax = axes['d']
 lambdas, _, _ = chips[1].spacings(Q, ylds_at)
 lo = np.nanargmax(lambdas)
 print(lo, lambdas[lo])
-_ = ax.hist(lambdas[:lo], bins, facecolor=cs[1], edgecolor='None', alpha=.75, label='lower band')
-_ = ax.hist(lambdas[lo:], bins, facecolor='None', edgecolor=cs[1], alpha=.75, label='upper band')
+_ = ax.hist(lambdas[:lo], bins, facecolor=cs[1], edgecolor='None', alpha=.75, label='↓ LO')
+_ = ax.hist(lambdas[lo:], bins, facecolor='None', edgecolor=cs[1], alpha=.75, label='↑ LO')
 ax.axvline(ylds_at, c='r', ls='-', lw=1, zorder=5)
 _ = ax.set_xlim(dflim)
 # _ = ax.set_ylim([0, 120])
-ax.set_xlabel('$\lambda_M^\mathrm{trim} \\times Q$ $(\mathrm{lw})$')
+ax.set_xlabel('$\lambda_M^\mathrm{trim} \\times Q_l$ $(\mathrm{MHz})$')
 ax.set_ylabel('$\mathrm{Counts}$')   
 ax2 = ax.secondary_xaxis('top')
 ax2.set_xticks(dfticks)
 ax2.set_xticklabels(df_fticks)
-ax2.set_xlabel('$\lambda_M$')
+ax2.set_xlabel('$\lambda_M^\mathrm{trim}$')
 x, kernel, fwhm = ft.kde(lambdas[:lo], bw=1)
-std = fwhm/Q/2.355
+std = fwhm/Q/2.355/np.sqrt(2)
 ax.plot(x, kernel*len(lambdas[:lo])*(bins[1]-bins[0]), c='k', ls='--', lw=1, label='KDE')
-ax.annotate('$\sigma_\mathrm{KDE}^\mathrm{trim}=%.2G\\times 10^{-5}$' % (std*1e5), xy=(0.5, .95), xycoords='axes fraction', ha='center', va='top', color='k')
+print('$\sigma_\mathrm{fab}^\mathrm{trim}=%.1f\\times 10^{-5}$' % (std*1e5))
+# ax.annotate('$\sigma_\mathrm{fab}^\mathrm{trim}=%.1G\\times 10^{-4}$' % (std*1e4), xy=(0.5, .95), xycoords='axes fraction', ha='center', va='top', color='k')
 # ax.axvline(ldt)
 # ax.axvline(ldt2)
 ax.set_ylim(0, 125)
 ax.legend(loc='center right', handlelength=1)
 
-ax = axes['d']
+ax = axes['e']
 thresholds = np.arange(1, 11)
 sigma1 = np.nanstd(chips[0].df_f)
 sigma1 = 1e-3
@@ -133,24 +124,28 @@ ylds_before_analytic = []
 ylds_after = []
 ylds_after_analytic = []
 for threshold in thresholds:
-    ylds_before.append(chips[0].spacings(Q, threshold)[2])
-    ylds_after.append(chips[1].spacings(Q, threshold)[2])
+    before = chips[0].spacings(Q, threshold)
+    after = chips[1].spacings(Q, threshold)
+    ylds_before.append(before[2])
+    ylds_after.append(after[2])
+    if threshold == ylds_at:
+        print ('yields at threshold %d: %.2f (%d/1024) and %.2f (%d/1024)' % (threshold, before[2], np.sum(before[1]), after[2], np.sum(after[1])))
     ylds_before_analytic.append(ft.p0_numeric(1, Q, 1, sigma1, threshold, nr_iter=100, fs=chips[0].fd))
     ylds_after_analytic.append(ft.p0_numeric(1, Q, 1, sigma2, threshold, nr_iter=100, fs=chips[1].fd))
 ax.plot(thresholds, np.array(ylds_before), lw=1, c=cs[0])
 ax.plot(thresholds, np.array(ylds_after), lw=1, c=cs[1])	
 # ax.plot(thresholds, np.array(ylds_before_analytic), lw=1, label='Before trimming', c=cs[0], ls='--')
-ax.plot(thresholds, np.array(ylds_after_analytic), lw=1, label='$P_0(\sigma=2\\times 10^{-4})$', c='k', ls='--')	
-ax.annotate('$P_0(\sigma=2\\times 10^{-4})$', xy=(4.5, 0.8), fontsize=8)
+# ax.plot(thresholds, np.array(ylds_after_analytic), lw=1, label='$P_0(\sigma=2\\times 10^{-4})$', c='k', ls='--')	
+# ax.annotate('$P_0(\sigma=2\\times 10^{-4})$', xy=(4.5, 0.8), fontsize=8)
 yld_before = ylds_before[ylds_at-1]
 yld_after = ylds_after[ylds_at-1]
 # ax.legend(loc='center right', handlelength=1)
 ax.axvline(ylds_at, c='r', ls='-', lw=1, zorder=0)
 ax.scatter(ylds_at, yld_before, c=cs[0], s=10)
 ax.scatter(ylds_at, yld_after, c=cs[1], s=10)
-ax.annotate('%d\%%' % (yld_before*1e2), xy=(ylds_at, yld_before), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[0])
-ax.annotate('%d\%%' % (yld_after*1e2), xy=(ylds_at, yld_after), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[1])
-print('yields: %d %% and %d %% ' % (yld_before*100, yld_after*100))
+ax.annotate('%.f\%%' % (yld_before*1e2), xy=(ylds_at, yld_before), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[0])
+ax.annotate('%.f\%%' % (yld_after*1e2), xy=(ylds_at, yld_after), xytext=(-10, -15), textcoords='offset points', ha='center', va='bottom', color=cs[1])
+print('yields: %.f %% and %.f %% ' % (yld_before*100, yld_after*100))
 lim = [0, 10]
 ax.set_xlim(lim)
 ticks = np.arange(0, 11, 5)
@@ -163,12 +158,13 @@ ax2 = ax.secondary_xaxis('top')
 ax2.set_xticks(ticks)
 ax2.set_xticklabels(ticks/Q)
 ax2.set_xticks(tickss, minor=True)
-ax2.set_xlabel('$\lambda_M^\mathrm{min}$')
-ax.set_xlabel('$\lambda_M^\mathrm{min} \\times Q$ $(\mathrm{lw})$')
+ax2.set_xlabel('$\lambda_\mathrm{min}$')
+ax.set_xlabel('$\lambda_\mathrm{min} \\times Q_l$ $(\mathrm{MHz})$')
 ax.set_ylabel('$\mathrm{yield}$')
 # ax.legend()
 
 
 # ax.legend(loc='upper right')
-plt.savefig('Mappings/Masters/figures/yield.pdf')
+# plt.savefig('Mappings/Masters/figures/yield.pdf')
+# plt.savefig('Mappings/Masters/figures/yield.svg', transparent=True)
 plt.show()
