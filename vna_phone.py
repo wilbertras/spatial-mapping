@@ -26,6 +26,8 @@ xstart =  None # 70 xsteps
 xsteps =  []
 ystart =  None # 1 ysteps
 ysteps =  []
+
+
 try:
     os.startfile("scrcpy-win64-v211\scrcpy.exe")
     client = AdbClient(host="127.0.0.1", port=5037) # Default is "127.0.0.1" and 5037
@@ -90,15 +92,7 @@ def draw_text_boxes(text_list, bgcolor, linecolor):
             text_surface = FONT.render(line, True, linecolor)
             text_rect = text_surface.get_rect(center=(x + column_width // 2, y + (j * font_size) + (BOX_height // 2)))
             screen.blit(text_surface, text_rect)
-
-
-def read_battery(device):
-    output = device.shell("dumpsys battery")
-    battery_level = '??'
-    for line in output.splitlines():
-        if "level" in line:
-            battery_level = str(int(line.split(":")[1].strip()))
-    return battery_level    
+ 
 
 screen_width = 1440
 screen_height = 3216
@@ -177,7 +171,7 @@ while running:
     draw_text_boxes(text_list, colors[bgcolor], colors[linecolor])
     
     if measure:
-        battery = read_battery(device)
+        battery = f.read_battery(device)
         if square:
             if nr_xscanned < nr_x2scan and nr_yscanned < nr_y2scan and nr_x2scan > 0 and nr_y2scan > 0:
                 while linetype != 'both':

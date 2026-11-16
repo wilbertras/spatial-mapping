@@ -262,3 +262,12 @@ def select_directory(initial_dir=None):
     selected_dir = filedialog.askdirectory(title="Select Directory", initialdir=initial_dir)
     root.destroy()
     return selected_dir
+
+
+def read_battery(device):
+    output = device.shell("dumpsys battery")
+    battery_level = '??'
+    for line in output.splitlines():
+        if "level" in line:
+            battery_level = str(int(line.split(":")[1].strip()))
+    return battery_level   
